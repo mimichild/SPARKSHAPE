@@ -163,8 +163,8 @@ export function AlignScreen({ photoUri, photoType, onConfirm, onCancel }: Props)
             />
           </Animated.View>
 
-          {/* 人形輪廓（固定，完全透明背景） */}
-          <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          {/* 人形輪廓：置中並縮小，頭頂/腳底留白不碰框 */}
+          <View style={styles.silhouetteWrapper} pointerEvents="none">
             <Image
               source={require('../../assets/images/silhouette.png')}
               style={styles.silhouette}
@@ -225,10 +225,16 @@ const styles = StyleSheet.create({
     width: FRAME_W,
     height: FRAME_H,
   },
+  // 輪廓圖：縮到 84%，上下各留 8% 讓頭頂/腳底不碰框
+  silhouetteWrapper: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   silhouette: {
-    width: FRAME_W,
-    height: FRAME_H,
-    opacity: 0.7,
+    width:   Math.round(FRAME_W * 0.84),
+    height:  Math.round(FRAME_H * 0.84),
+    opacity: 0.65,
   },
   frameBorder: {
     ...StyleSheet.absoluteFillObject,

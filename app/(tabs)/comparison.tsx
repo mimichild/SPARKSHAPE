@@ -1,7 +1,8 @@
 import {
-  FlatList,
+  Dimensions,
   Image,
   Modal,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -69,7 +70,7 @@ function PhotoPanel({
               <Image
                 source={{ uri: photo.fullPath }}
                 style={StyleSheet.absoluteFill}
-                resizeMode="cover"
+                resizeMode="contain"
               />
             </Animated.View>
           </GestureDetector>
@@ -92,7 +93,7 @@ function PhotoPanel({
 
 const ps = StyleSheet.create({
   column: { flex: 1 },
-  frame:  { flex: 1, backgroundColor: '#F0F0F0', overflow: 'hidden' },
+  frame:  { flex: 1, backgroundColor: '#F5F5F5', overflow: 'hidden' },
   noPhoto: {
     flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8,
   },
@@ -100,6 +101,147 @@ const ps = StyleSheet.create({
   meta:  { alignItems: 'center', paddingVertical: 8 },
   label: { fontSize: 13, fontWeight: '700', letterSpacing: 1 },
   date:  { fontSize: 11, color: '#888', marginTop: 2 },
+});
+
+// ── 月曆元件 ─────────────────────────────────────────────────────────────────
+
+const CAL_W = Dimensions.get('window').width;
+const CELL  = Math.floor((CAL_W - 32) / 7);
+const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六'];
+
+function getGrid(year: number, month: number): (number | null)[][] {
+  const first = new Date(year, month, 1).getDay();
+  const days  = new Date(year, month + 1, 0).getDate();
+  const cells: (number | null)[] = [
+    ...Array(first).fill(null),
+    ...Array.from({ length: days }, (_, i) => i + 1),
+  ];
+  while (cells.length % 7 !== 0) cells.push(null);
+  const rows: (number | null)[][] = [];
+  for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7));
+  return rows;
+}
+
+function CalendarPicker({
+  availableDates,
+  selected,
+  onToggle,
+  themeColor,
+  initDate,
+}: {
+  availableDates: string[];
+  selected: string[];
+  onToggle: (d: string) => void;
+  themeColor: string;
+  initDate?: string;
+}) {
+  const ref = initDate ? new Date(initDate) : new Date();
+  const [year,  setYear]  = useState(ref.getFullYear());
+  const [month, setMonth] = useState(ref.getMonth());
+
+  const availableSet = useMemo(() => new Set(availableDates), [availableDates]);
+
+  function pad(n: number) { return String(n).padStart(2, '0'); }
+  function dateKey(y: number, m: number, d: number) { return `${y}-${pad(m + 1)}-${pad(d)}`; }
+
+  function prevMonth() { if (month === 0) { setYear(y => y - 1); setMonth(11); } else setMonth(m => m - 1); }
+  function nextMonth() { if (month === 11) { setYear(y => y + 1); setMonth(0);  } else setMonth(m => m + 1); }
+
+  const grid = useMemo(() => getGrid(year, month), [year, month]);
+
+  const today = new Date();
+  const todayKey = dateKey(today.getFullYear(), today.getMonth(), today.getDate());
+
+  return (
+    <View style={cl.wrapper}>
+      {/* 年份導航 */}
+      <View style={cl.navRow}>
+        <TouchableOpacity style={cl.navBtn} onPress={() => setYear(y => y - 1)}>
+          <Ionicons name={'chevron-back' as IoniconsName} size={18} color="#555" />
+        </TouchableOpacity>
+        <Text style={cl.navYear}>{year}年</Text>
+        <TouchableOpacity style={cl.navBtn} onPress={() => setYear(y => y + 1)}>
+          <Ionicons name={'chevron-forward' as IoniconsName} size={18} color="#555" />
+        </TouchableOpacity>
+      </View>
+
+      {/* 月份導航 */}
+      <View style={cl.navRow}>
+        <TouchableOpacity style={cl.navBtn} onPress={prevMonth}>
+          <Ionicons name={'chevron-back' as IoniconsName} size={16} color="#777" />
+        </TouchableOpacity>
+        <Text style={cl.navMonth}>{month + 1}月</Text>
+        <TouchableOpacity style={cl.navBtn} onPress={nextMonth}>
+          <Ionicons name={'chevron-forward' as IoniconsName} size={16} color="#777" />
+        </TouchableOpacity>
+      </View>
+
+      {/* 星期標題 */}
+      <View style={cl.weekRow}>
+        {WEEKDAYS.map(w => (
+          <Text key={w} style={cl.weekday}>{w}</Text>
+        ))}
+      </View>
+
+      {/* 日期格子 */}
+      {grid.map((row, ri) => (
+        <View key={ri} style={cl.weekRow}>
+          {row.map((day, ci) => {
+            if (!day) return <View key={ci} style={cl.cell} />;
+            const key      = dateKey(year, month, day);
+            const hasData  = availableSet.has(key);
+            const isSel    = selected.includes(key);
+            const isFull   = !isSel && selected.length >= 2;
+            const isToday  = key === todayKey;
+
+            return (
+              <TouchableOpacity
+                key={ci}
+                style={[
+                  cl.cell,
+                  isSel && { backgroundColor: themeColor, borderRadius: CELL / 2 },
+                  !isSel && isToday && cl.todayCell,
+                ]}
+                onPress={() => { if (hasData && !isFull) onToggle(key); }}
+                activeOpacity={hasData && !isFull ? 0.7 : 1}
+              >
+                <Text style={[
+                  cl.dayBase,
+                  hasData ? cl.dayBold : cl.dayThin,
+                  isSel   && cl.daySelected,
+                  !hasData && cl.dayNoData,
+                ]}>
+                  {day}
+                </Text>
+                {/* 有資料小點 */}
+                {hasData && !isSel && (
+                  <View style={[cl.dot, { backgroundColor: themeColor }]} />
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+const cl = StyleSheet.create({
+  wrapper: { paddingHorizontal: 16, paddingBottom: 8 },
+  navRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+  navBtn:  { padding: 8 },
+  navYear: { fontSize: 18, fontWeight: '700', color: '#222', minWidth: 90, textAlign: 'center' },
+  navMonth:{ fontSize: 16, fontWeight: '600', color: '#444', minWidth: 50, textAlign: 'center' },
+  weekRow: { flexDirection: 'row', justifyContent: 'space-around', marginVertical: 1 },
+  weekday: { width: CELL, textAlign: 'center', fontSize: 11, color: '#AAA', fontWeight: '500' },
+  cell:    { width: CELL, height: CELL, alignItems: 'center', justifyContent: 'center' },
+  todayCell: { borderWidth: 1, borderColor: '#CCC', borderRadius: CELL / 2 },
+  dayBase:   { fontSize: 16, lineHeight: 20 },
+  dayBold:   { fontWeight: '800', color: '#111', fontSize: 17 },  // 有資料：粗體大字
+  dayThin:   { fontWeight: '300', color: '#888888', fontSize: 14 }, // 無資料：細體中灰
+  daySelected: { color: '#FFF', fontWeight: '800' },
+  dayNoData:   { },
+  dot: { width: 4, height: 4, borderRadius: 2, marginTop: 1 },
 });
 
 // ── 日期選取模態框 ───────────────────────────────────────────────────────────
@@ -121,7 +263,8 @@ function DatePickerModal({
   onClose: () => void;
   themeColor: string;
 }) {
-  const fmt = (d: string) => d.replace(/-/g, '/');
+  // 初始月份設為最近有資料的那個月
+  const initDate = availableDates[0];
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -140,33 +283,15 @@ function DatePickerModal({
             <Text style={dm.emptyText}>目前沒有可對比的照片</Text>
           </View>
         ) : (
-          <FlatList
-            data={availableDates}
-            keyExtractor={(d) => d}
-            style={dm.list}
-            renderItem={({ item }) => {
-              const isSel = selected.includes(item);
-              const isDisabled = !isSel && selected.length >= 2;
-              return (
-                <TouchableOpacity
-                  style={[dm.row, isSel && { backgroundColor: themeColor + '18' }]}
-                  onPress={() => { if (!isDisabled) onToggle(item); }}
-                  activeOpacity={isDisabled ? 1 : 0.7}
-                >
-                  <View style={[
-                    dm.circle,
-                    isSel && { backgroundColor: themeColor, borderColor: themeColor },
-                    isDisabled && dm.circleDisabled,
-                  ]}>
-                    {isSel && <Ionicons name={'checkmark' as IoniconsName} size={13} color="#FFF" />}
-                  </View>
-                  <Text style={[dm.dateText, isDisabled && dm.textDisabled]}>
-                    {fmt(item)}
-                  </Text>
-                </TouchableOpacity>
-              );
-            }}
-          />
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <CalendarPicker
+              availableDates={availableDates}
+              selected={selected}
+              onToggle={onToggle}
+              themeColor={themeColor}
+              initDate={initDate}
+            />
+          </ScrollView>
         )}
 
         <View style={dm.actions}>
@@ -192,7 +317,7 @@ const dm = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' },
   sheet: {
     backgroundColor: '#FFF', borderTopLeftRadius: 20, borderTopRightRadius: 20,
-    maxHeight: '70%', paddingBottom: 32,
+    maxHeight: '85%', paddingBottom: 24,
   },
   handle: {
     width: 40, height: 4, backgroundColor: '#E0E0E0', borderRadius: 2,
@@ -200,23 +325,9 @@ const dm = StyleSheet.create({
   },
   title:    { fontSize: 16, fontWeight: '700', color: '#333', textAlign: 'center', marginTop: 12 },
   subtitle: { fontSize: 13, color: '#888', textAlign: 'center', marginTop: 4, marginBottom: 8 },
-  list:     { maxHeight: 300 },
   emptyBox: { padding: 32, alignItems: 'center' },
   emptyText:{ color: '#AAA', fontSize: 14 },
-  row: {
-    flexDirection: 'row', alignItems: 'center', gap: 14,
-    paddingHorizontal: 20, paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#F0F0F0',
-  },
-  circle: {
-    width: 24, height: 24, borderRadius: 12,
-    borderWidth: 2, borderColor: '#CCCCCC',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  circleDisabled: { borderColor: '#E8E8E8' },
-  dateText:     { fontSize: 15, color: '#333', fontWeight: '500' },
-  textDisabled: { color: '#CCCCCC' },
-  actions: { flexDirection: 'row', gap: 12, paddingHorizontal: 20, paddingTop: 16 },
+  actions: { flexDirection: 'row', gap: 12, paddingHorizontal: 20, paddingTop: 12 },
   cancelBtn: {
     flex: 1, height: 48, borderRadius: 12,
     borderWidth: 1, borderColor: '#E0E0E0',
