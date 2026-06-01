@@ -1,29 +1,28 @@
-import { Modal, View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { Alert, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
+import type { PhotoType } from '@/types/bodyPhoto';
+import { useSettingsStore } from '@/stores/settingsStore';
 
 type IoniconsName = ComponentProps<typeof Ionicons>['name'];
 
 interface Props {
   visible: boolean;
   onClose: () => void;
-  onPhotoPicked: (uri: string) => void;
+  onPhotoPicked: (uri: string, photoType: PhotoType) => void;
 }
 
 export function CameraSheet({ visible, onClose, onPhotoPicked }: Props) {
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+  const themeColor = useSettingsStore((s) => s.themeColor);
 
-  async function handleTakePhoto() {
+  async function shoot(photoType: PhotoType) {
     if (!cameraPermission?.granted) {
       const result = await requestCameraPermission();
       if (!result.granted) {
-        Alert.alert(
-          '需要相機權限',
-          '請前往系統設定 > SPARKSHAPE > 相機，開啟相機存取權限。',
-          [{ text: '確定' }],
-        );
+        Alert.alert('需要相機權限', '請前往系統設定 > SPARKSHAPE > 相機，開啟相機存取權限。', [{ text: '確定' }]);
         return;
       }
     }
@@ -35,18 +34,14 @@ export function CameraSheet({ visible, onClose, onPhotoPicked }: Props) {
       quality: 1,
     });
     if (!result.canceled && result.assets[0]) {
-      onPhotoPicked(result.assets[0].uri);
+      onPhotoPicked(result.assets[0].uri, photoType);
     }
   }
 
-  async function handlePickFromLibrary() {
+  async function pick(photoType: PhotoType) {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert(
-        '需要相簿權限',
-        '請前往系統設定 > SPARKSHAPE > 照片，開啟相簿存取權限。',
-        [{ text: '確定' }],
-      );
+      Alert.alert('需要相簿權限', '請前往系統設定 > SPARKSHAPE > 照片，開啟相簿存取權限。', [{ text: '確定' }]);
       return;
     }
     onClose();
@@ -57,48 +52,44 @@ export function CameraSheet({ visible, onClose, onPhotoPicked }: Props) {
       quality: 1,
     });
     if (!result.canceled && result.assets[0]) {
-      onPhotoPicked(result.assets[0].uri);
+      onPhotoPicked(result.assets[0].uri, photoType);
     }
   }
 
+  const options: {
+    label: string;
+    icon: IoniconsName;
+    action: () => void;
+    accent: string;
+  }[] = [
+    { label: '拍正面照', icon: 'camera',         action: () => shoot('front'), accent: themeColor },
+    { label: '拍側面照', icon: 'camera-outline',  action: () => shoot('side'),  accent: '#7BAFC4' },
+    { label: '上傳正面照', icon: 'images',         action: () => pick('front'),  accent: themeColor },
+    { label: '上傳側面照', icon: 'images-outline', action: () => pick('side'),   accent: '#7BAFC4' },
+  ];
+
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <TouchableOpacity style={styles.backdrop} onPress={onClose} activeOpacity={1} />
-      <View style={styles.sheet}>
-        <View style={styles.handle} />
-        <Text style={styles.title}>新增身型照片</Text>
-
-        <TouchableOpacity
-          style={styles.option}
-          onPress={handleTakePhoto}
-          testID="take-photo-btn"
-        >
-          <Ionicons name={'camera' as IoniconsName} size={24} color="#FF6B35" />
-          <Text style={styles.optionText}>拍照</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.option}
-          onPress={handlePickFromLibrary}
-          testID="pick-library-btn"
-        >
-          <Ionicons name={'images' as IoniconsName} size={24} color="#FF6B35" />
-          <Text style={styles.optionText}>從相簿選取</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.cancelOption} onPress={onClose} testID="sheet-cancel">
-          <Text style={styles.cancelText}>取消</Text>
+      <TouchableOpacity style={s.backdrop} onPress={onClose} activeOpacity={1} />
+      <View style={s.sheet}>
+        <View style={s.handle} />
+        <Text style={s.title}>新增身型照片</Text>
+        {options.map((opt) => (
+          <TouchableOpacity key={opt.label} style={s.option} onPress={opt.action}>
+            <Ionicons name={opt.icon} size={24} color={opt.accent} />
+            <Text style={[s.optionText, { color: opt.accent }]}>{opt.label}</Text>
+          </TouchableOpacity>
+        ))}
+        <TouchableOpacity style={s.cancelOption} onPress={onClose} testID="sheet-cancel">
+          <Text style={s.cancelText}>取消</Text>
         </TouchableOpacity>
       </View>
     </Modal>
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
+const s = StyleSheet.create({
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
   sheet: {
     backgroundColor: '#1A1A1A',
     borderTopLeftRadius: 20,
@@ -107,43 +98,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   handle: {
-    width: 40,
-    height: 4,
-    backgroundColor: '#444444',
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginTop: 12,
-    marginBottom: 8,
+    width: 40, height: 4, backgroundColor: '#444', borderRadius: 2,
+    alignSelf: 'center', marginTop: 12, marginBottom: 4,
   },
   title: {
-    color: '#FFFFFF',
-    fontSize: 17,
-    fontWeight: '700',
-    textAlign: 'center',
-    paddingVertical: 16,
+    color: '#FFFFFF', fontSize: 17, fontWeight: '700',
+    textAlign: 'center', paddingVertical: 16,
   },
   option: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    paddingVertical: 18,
-    borderTopWidth: 1,
-    borderTopColor: '#2A2A2A',
+    flexDirection: 'row', alignItems: 'center', gap: 16,
+    paddingVertical: 16, borderTopWidth: 1, borderTopColor: '#2A2A2A',
   },
-  optionText: {
-    color: '#FFFFFF',
-    fontSize: 17,
-  },
+  optionText: { fontSize: 17, fontWeight: '500' },
   cancelOption: {
-    marginTop: 8,
-    paddingVertical: 18,
-    borderTopWidth: 1,
-    borderTopColor: '#2A2A2A',
-    alignItems: 'center',
+    marginTop: 8, paddingVertical: 16,
+    borderTopWidth: 1, borderTopColor: '#2A2A2A', alignItems: 'center',
   },
-  cancelText: {
-    color: '#888888',
-    fontSize: 17,
-    fontWeight: '600',
-  },
+  cancelText: { color: '#888', fontSize: 17, fontWeight: '600' },
 });
