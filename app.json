@@ -1,0 +1,68 @@
+{
+  "expo": {
+    "name": "SPARKSHAPE",
+    "slug": "sparkshape",
+    "scheme": "sparkshape",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "icon": "./assets/images/icon.png",
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#121212"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.sparkshape.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "SPARKSHAPE needs camera access to take body photos",
+        "NSPhotoLibraryUsageDescription": "SPARKSHAPE needs photo library access to upload body photos",
+        "NSPhotoLibraryAddUsageDescription": "SPARKSHAPE needs permission to save photos to your library"
+      }
+    },
+    "android": {
+      "package": "com.sparkshape.app",
+      "edgeToEdgeEnabled": true,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundColor": "#121212"
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "SPARKSHAPE needs camera access to take body photos"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "SPARKSHAPE needs photo library access to upload body photos"
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "SPARKSHAPE needs permission to access your photos",
+          "savePhotosPermission": "SPARKSHAPE needs permission to save photos to your library"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
