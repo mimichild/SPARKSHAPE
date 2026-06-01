@@ -127,6 +127,23 @@ export async function deleteBodyPhoto(db: SQLiteDatabase, id: string): Promise<v
   await db.runAsync(`DELETE FROM ${TABLE_BODY_PHOTOS} WHERE id = ?`, id);
 }
 
+/** 刪除指定日期＋類型的所有照片記錄，回傳被刪除的 id 列表（供呼叫方清除檔案） */
+export async function deletePhotosByDateAndType(
+  db: SQLiteDatabase,
+  date: string,   // YYYY-MM-DD
+  photoType: PhotoType,
+): Promise<string[]> {
+  const rows = await db.getAllAsync<{ id: string }>(
+    `SELECT id FROM ${TABLE_BODY_PHOTOS}
+     WHERE substr(taken_at, 1, 10) = ? AND photo_type = ?`,
+    date, photoType,
+  );
+  for (const row of rows) {
+    await db.runAsync(`DELETE FROM ${TABLE_BODY_PHOTOS} WHERE id = ?`, row.id);
+  }
+  return rows.map((r) => r.id);
+}
+
 export async function updateBodyPhotoMeta(
   db: SQLiteDatabase,
   id: string,

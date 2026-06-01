@@ -1,16 +1,14 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import type { ComponentProps } from 'react';
 import { useSettingsStore } from '@/stores/settingsStore';
-
-type IoniconsName = ComponentProps<typeof Ionicons>['name'];
 
 interface Props {
   title: string;
+  /** 選填：顯示在標題列右側的自訂元件 */
+  rightComponent?: React.ReactNode;
 }
 
-export function TabHeader({ title }: Props) {
+export function TabHeader({ title, rightComponent }: Props) {
   const themeColor = useSettingsStore((s) => s.themeColor);
 
   return (
@@ -21,13 +19,14 @@ export function TabHeader({ title }: Props) {
         activeOpacity={0.6}
         hitSlop={{ top: 10, bottom: 10, left: 8, right: 16 }}
       >
-        <Ionicons name={'chevron-back' as IoniconsName} size={18} color="rgba(255,255,255,0.9)" />
         <Text style={s.backText}>返回</Text>
       </TouchableOpacity>
 
       <Text style={s.title}>{title}</Text>
 
-      <View style={s.placeholder} />
+      <View style={s.placeholder}>
+        {rightComponent ?? null}
+      </View>
     </View>
   );
 }
@@ -57,5 +56,5 @@ const s = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
   },
-  placeholder: { width: 64 },
+  placeholder: { width: 80, alignItems: 'flex-end' },
 });
