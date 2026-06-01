@@ -8,3 +8,8 @@ export const SaveFormat = {
   JPEG: 'jpeg',
   PNG: 'png',
 } as const;
+
+export const FlipType = {
+  Horizontal: 'horizontal',
+  Vertical:   'vertical',
+} as const;

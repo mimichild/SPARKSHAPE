@@ -18,11 +18,8 @@ interface Props {
 export function BodyPhotoCard({ photo, onPress, onLongPress, isSelecting, isSelected }: Props) {
   const themeColor = useSettingsStore((s) => s.themeColor);
 
-  const dateStr = new Date(photo.takenAt).toLocaleDateString('zh-TW', {
-    month: '2-digit',
-    day: '2-digit',
-    year: '2-digit',
-  });
+  const d = new Date(photo.takenAt);
+  const dateStr = `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
 
   return (
     <TouchableOpacity
@@ -66,9 +63,6 @@ const styles = StyleSheet.create({
   cell: {
     width: CELL_SIZE,
     height: CELL_SIZE,
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    padding: 4,
     borderWidth: 0.5,
     borderColor: '#E0E0E0',
     backgroundColor: '#F5F5F5',
@@ -76,10 +70,13 @@ const styles = StyleSheet.create({
   },
   image: { ...StyleSheet.absoluteFillObject },
   date: {
-    color: '#FFFFFFCC',
+    position: 'absolute',
+    bottom: 4,
+    right: 4,
+    color: '#333333',
     fontSize: 9,
     fontWeight: '600',
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'rgba(255,255,255,0.92)',
     paddingHorizontal: 4,
     paddingVertical: 2,
     borderRadius: 3,

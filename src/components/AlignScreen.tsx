@@ -8,10 +8,10 @@ import {
   View,
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, runOnJS } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
-import { useState } from 'react';
+import { manipulateAsync, SaveFormat, FlipType } from 'expo-image-manipulator';
+import { useCallback, useRef, useState } from 'react';
 import type { PhotoType } from '@/types/bodyPhoto';
 import { useSettingsStore } from '@/stores/settingsStore';
 
@@ -38,7 +38,7 @@ export function AlignScreen({ photoUri, photoType, onConfirm, onCancel }: Props)
     ? '側面拍攝：只需對齊頭頂和腳底，手臂不需對齊'
     : '拖曳或縮放照片以對齊人形輪廓';
 
-  // 手勢狀態（Reanimated shared values）
+  // ── Reanimated shared values（UI 執行緒，驅動動畫）──────────────────
   const scale = useSharedValue(1);
   const savedScale = useSharedValue(1);
   const tx = useSharedValue(0);
@@ -46,9 +46,18 @@ export function AlignScreen({ photoUri, photoType, onConfirm, onCancel }: Props)
   const savedTx = useSharedValue(0);
   const savedTy = useSharedValue(0);
 
+  // ── JS 執行緒 ref（handleConfirm 裁切時讀取，避免跨執行緒延遲）────────
+  const cropRef = useRef({ s: 1, tx: 0, ty: 0 });
+  const syncCrop = useCallback(
+    (s: number, x: number, y: number) => { cropRef.current = { s, tx: x, ty: y }; },
+    [],
+  );
+
   const pinch = Gesture.Pinch()
     .onUpdate((e) => {
-      scale.value = Math.max(0.3, Math.min(8, savedScale.value * e.scale));
+      const ns = Math.max(0.3, Math.min(8, savedScale.value * e.scale));
+      scale.value = ns;
+      runOnJS(syncCrop)(ns, tx.value, ty.value);
     })
     .onEnd(() => {
       savedScale.value = scale.value;
@@ -57,8 +66,11 @@ export function AlignScreen({ photoUri, photoType, onConfirm, onCancel }: Props)
   const pan = Gesture.Pan()
     .minPointers(1)
     .onUpdate((e) => {
-      tx.value = savedTx.value + e.translationX;
-      ty.value = savedTy.value + e.translationY;
+      const nx = savedTx.value + e.translationX;
+      const ny = savedTy.value + e.translationY;
+      tx.value = nx;
+      ty.value = ny;
+      runOnJS(syncCrop)(scale.value, nx, ny);
     })
     .onEnd(() => {
       savedTx.value = tx.value;
@@ -79,61 +91,57 @@ export function AlignScreen({ photoUri, photoType, onConfirm, onCancel }: Props)
   async function handleConfirm() {
     setProcessing(true);
     try {
-      const s = scale.value;
-      const transX = tx.value;
-      const transY = ty.value;
+      const { s, tx: transX, ty: transY } = cropRef.current;
 
-      // 取得原始圖片尺寸
-      const { w: imgW, h: imgH } = await new Promise<{ w: number; h: number }>(
-        (resolve, reject) =>
-          Image.getSize(
-            photoUri,
-            (w, h) => resolve({ w, h }),
-            reject,
-          ),
+      // ★ 關鍵修正：Android 的 Image.getSize() 回傳的是 RAW（未旋轉）尺寸。
+      //   改用 manipulateAsync 雙重翻轉（恆等變換）來取得「顯示方向」的正確尺寸：
+      //   1. 套用 EXIF 旋轉（expo-image-manipulator 讀圖時一律套用 EXIF）
+      //   2. 翻轉兩次 = 不改變畫面，但強制把 EXIF 旋轉烤進像素
+      //   3. normalized.width/height = 實際顯示尺寸，與 AlignScreen 顯示一致
+      const normalized = await manipulateAsync(
+        photoUri,
+        [
+          { flip: FlipType.Horizontal },
+          { flip: FlipType.Horizontal },
+        ],
+        { compress: 0.99, format: SaveFormat.JPEG },
       );
+      const imgW = normalized.width;
+      const imgH = normalized.height;
 
-      // resizeMode="cover" 的縮放比例與偏移
-      // 圖片被縮放到「剛好覆蓋 FRAME_W × FRAME_H」
+      // resizeMode="cover" 的縮放比例與偏移（使用正確的顯示尺寸）
       const coverScale = Math.max(FRAME_W / imgW, FRAME_H / imgH);
-      const offsetX = (imgW * coverScale - FRAME_W) / 2; // 左右各隱藏多少 display px
-      const offsetY = (imgH * coverScale - FRAME_H) / 2; // 上下各隱藏多少 display px
+      const offsetX = (imgW * coverScale - FRAME_W) / 2;
+      const offsetY = (imgH * coverScale - FRAME_H) / 2;
 
-      // ── 反向計算：從 frame 邊界推算在 display photo 中的可見範圍 ──
-      // 變形公式（以元素中心為原點縮放後再平移）：
-      //   screen_x = CX + (photo_x - CX) * s + transX
-      // 反算：
-      //   photo_x = (screen_x - CX - transX) / s + CX
+      // 反向計算可見範圍
       const visLeft   = (0       - CX - transX) / s + CX;
       const visTop    = (0       - CY - transY) / s + CY;
       const visRight  = (FRAME_W - CX - transX) / s + CX;
       const visBottom = (FRAME_H - CY - transY) / s + CY;
 
-      // 換算回原始圖片座標
       const rawX = (visLeft + offsetX) / coverScale;
       const rawY = (visTop  + offsetY) / coverScale;
       const rawW = (visRight  - visLeft)  / coverScale;
       const rawH = (visBottom - visTop)   / coverScale;
 
-      // 限制在圖片範圍內
       const cropX = Math.max(0, Math.round(rawX));
       const cropY = Math.max(0, Math.round(rawY));
       const cropW = Math.min(imgW - cropX, Math.max(1, Math.round(rawW)));
       const cropH = Math.min(imgH - cropY, Math.max(1, Math.round(rawH)));
 
-      // 裁切 + 縮放到標準 3:4 輸出尺寸
+      // 從 EXIF 已正規化的圖片裁切
       const result = await manipulateAsync(
-        photoUri,
+        normalized.uri,
         [
           { crop: { originX: cropX, originY: cropY, width: cropW, height: cropH } },
-          { resize: { width: 1080, height: 1440 } },
+          { resize: { width: 1080 } },
         ],
         { compress: 0.9, format: SaveFormat.JPEG },
       );
 
       onConfirm(result.uri);
     } catch (err) {
-      // 處理失敗時直接存原圖作備援
       console.warn('AlignScreen crop failed, using original:', err);
       onConfirm(photoUri);
     } finally {

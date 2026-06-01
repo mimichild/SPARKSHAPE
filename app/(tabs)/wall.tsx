@@ -1,9 +1,10 @@
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { useBodyPhotos } from '@/hooks/useBodyPhotos';
 import { useSwipeBack } from '@/hooks/useSwipeBack';
 import { useSettingsStore } from '@/stores/settingsStore';
@@ -16,11 +17,16 @@ import type { BodyPhoto, PhotoType } from '@/types/bodyPhoto';
 type IoniconsName = ComponentProps<typeof Ionicons>['name'];
 
 export default function PhotoWallScreen() {
-  const { photos, loading, removePhoto } = useBodyPhotos('desc');
+  const { photos, loading, removePhoto, reload } = useBodyPhotos('desc');
   const [preview,     setPreview]     = useState<BodyPhoto | null>(null);
   const [filter,      setFilter]      = useState<PhotoType>('front');
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // 切換到此 Tab 時重新載入，確保顯示最新照片
+  useFocusEffect(
+    useCallback(() => { reload(); }, [reload]),
+  );
 
   const swipeHandlers = useSwipeBack();
   const themeColor    = useSettingsStore((s) => s.themeColor);

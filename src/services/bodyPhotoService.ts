@@ -148,6 +148,7 @@ export async function updateBodyPhotoMeta(
   db: SQLiteDatabase,
   id: string,
   updates: {
+    takenAt?:    string;
     brightness:  number;
     contrast:    number;
     weight:      string | null;
@@ -159,8 +160,11 @@ export async function updateBodyPhotoMeta(
 ): Promise<void> {
   await db.runAsync(
     `UPDATE ${TABLE_BODY_PHOTOS}
-     SET brightness = ?, contrast = ?, weight = ?, chest = ?, waist = ?, lower_waist = ?, hip = ?
+     SET taken_at = COALESCE(?, taken_at),
+         brightness = ?, contrast = ?,
+         weight = ?, chest = ?, waist = ?, lower_waist = ?, hip = ?
      WHERE id = ?`,
+    updates.takenAt ?? null,
     updates.brightness, updates.contrast,
     updates.weight, updates.chest, updates.waist, updates.lowerWaist, updates.hip,
     id,
