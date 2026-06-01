@@ -54,7 +54,7 @@ interface ReviewTarget {
 }
 
 export default function CurrentBodyScreen() {
-  const { photos, loading, addPhoto, removePhoto, updatePhotoMeta } = useBodyPhotos('desc');
+  const { photos, loading, addPhoto, replaceDaily, removePhoto, updatePhotoMeta } = useBodyPhotos('desc');
   const { content: noteContent, save: saveNote, loaded: noteLoaded } = useDailyNote();
   const [sheetOpen,    setSheetOpen]    = useState(false);
   const [alignTarget,  setAlignTarget]  = useState<AlignTarget | null>(null);
@@ -124,7 +124,7 @@ export default function CurrentBodyScreen() {
         hip:         result.hip,
       });
     } else {
-      // ── 新增模式：儲存照片檔案 + 新建記錄 ──
+      // ── 新增模式：儲存照片檔案 + 新建記錄（取代當天同類型舊照）──
       if (autoSavePhotos) {
         try {
           const { status } = await MediaLibrary.requestPermissionsAsync();
@@ -144,7 +144,7 @@ export default function CurrentBodyScreen() {
         lowerWaist: result.lowerWaist,
         hip:        result.hip,
       };
-      await addPhoto(input);
+      await replaceDaily(input);  // 自動刪除當天同類型舊照
     }
   }
 
