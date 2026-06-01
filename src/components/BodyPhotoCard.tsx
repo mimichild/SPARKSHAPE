@@ -5,7 +5,8 @@ import type { BodyPhoto } from '@/types/bodyPhoto';
 import { useSettingsStore } from '@/stores/settingsStore';
 
 type IoniconsName = ComponentProps<typeof Ionicons>['name'];
-const CELL_SIZE = Dimensions.get('window').width / 3;
+const CELL_W = Dimensions.get('window').width / 3;
+const CELL_H = Math.round(CELL_W * 4 / 3); // 3:4 直式比例
 
 interface Props {
   photo: BodyPhoto;
@@ -61,8 +62,8 @@ export function BodyPhotoCard({ photo, onPress, onLongPress, isSelecting, isSele
 
 const styles = StyleSheet.create({
   cell: {
-    width: CELL_SIZE,
-    height: CELL_SIZE,
+    width: CELL_W,
+    height: CELL_H,
     borderWidth: 0.5,
     borderColor: '#E0E0E0',
     backgroundColor: '#F5F5F5',
