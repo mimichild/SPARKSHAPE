@@ -32,7 +32,7 @@ export function BodyPhotoCard({ photo, onPress, onLongPress, isSelecting, isSele
       testID={`photo-card-${photo.id}`}
     >
       <Image
-        source={{ uri: photo.thumbPath }}
+        source={{ uri: photo.gridPath }}
         style={styles.image}
         resizeMode="cover"
       />
