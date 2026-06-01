@@ -15,8 +15,10 @@ export default function TabLayout() {
         tabBarInactiveTintColor: 'rgba(255,255,255,0.5)',
         tabBarStyle: {
           backgroundColor: themeColor,
-          borderTopColor: 'rgba(0,0,0,0.1)',
-          borderTopWidth: 1,
+          borderTopWidth: 0,
+          borderTopColor: 'transparent',
+          elevation: 0,       // 消除 Android shadow（灰線來源）
+          shadowOpacity: 0,   // 消除 iOS shadow
         },
         tabBarLabelStyle: {
           fontSize: 11,

@@ -235,9 +235,10 @@ export default function CurrentBodyScreen() {
   const measureSrc  = latestFront ?? latestSide;
 
   return (
-    <SafeAreaView style={s.root} {...swipeHandlers}>
+    <SafeAreaView style={[s.root, { backgroundColor: themeColor }]} {...swipeHandlers}>
       <TabHeader title="目前身材" />
 
+      <View style={s.contentArea}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView
           style={s.scroll}
@@ -388,12 +389,14 @@ export default function CurrentBodyScreen() {
           setAlignTarget({ rawUri: uri, photoType });
         }}
       />
+      </View>
     </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#FFFFFF' },
+  root:        { flex: 1 },
+  contentArea: { flex: 1, backgroundColor: '#FFFFFF' },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 20 },
 
