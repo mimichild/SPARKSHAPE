@@ -12,6 +12,8 @@ import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanima
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { useState } from 'react';
+import type { PhotoType } from '@/types/bodyPhoto';
+import { useSettingsStore } from '@/stores/settingsStore';
 
 const { width: SW, height: SH } = Dimensions.get('window');
 
@@ -23,12 +25,18 @@ const CY = FRAME_H / 2; // 中心點 Y
 
 interface Props {
   photoUri: string;
+  photoType: PhotoType;
   onConfirm: (croppedUri: string) => void;
   onCancel: () => void;
 }
 
-export function AlignScreen({ photoUri, onConfirm, onCancel }: Props) {
+export function AlignScreen({ photoUri, photoType, onConfirm, onCancel }: Props) {
   const [processing, setProcessing] = useState(false);
+  const themeColor = useSettingsStore((s) => s.themeColor);
+
+  const hintText = photoType === 'side'
+    ? '側面拍攝：只需對齊頭頂和腳底，手臂不需對齊'
+    : '拖曳或縮放照片以對齊人形輪廓';
 
   // 手勢狀態（Reanimated shared values）
   const scale = useSharedValue(1);
@@ -161,9 +169,9 @@ export function AlignScreen({ photoUri, onConfirm, onCancel }: Props) {
         </View>
       </GestureDetector>
 
-      {/* 底部操作區 */}
-      <View style={styles.footer}>
-        <Text style={styles.hint}>拖曳或縮放照片以對齊人形輪廓</Text>
+      {/* 底部操作區：背景填主題色 */}
+      <View style={[styles.footer, { backgroundColor: themeColor }]}>
+        <Text style={[styles.hint, photoType === 'side' && styles.hintSide]}>{hintText}</Text>
         <View style={styles.actions}>
           <TouchableOpacity
             style={styles.cancelBtn}
@@ -181,9 +189,9 @@ export function AlignScreen({ photoUri, onConfirm, onCancel }: Props) {
             testID="confirm-btn"
           >
             {processing ? (
-              <ActivityIndicator color="#FFF" />
+              <ActivityIndicator color={themeColor} />
             ) : (
-              <Text style={styles.confirmText}>確認儲存</Text>
+              <Text style={[styles.confirmText, { color: themeColor }]}>確認儲存</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -227,10 +235,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
   },
   hint: {
-    color: '#888',
+    color: 'rgba(255,255,255,0.85)',
     fontSize: 13,
     textAlign: 'center',
     marginBottom: 10,
+  },
+  hintSide: {
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
   actions: {
     flexDirection: 'row',
@@ -240,20 +252,20 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 52,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#444',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.6)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cancelText: { color: '#AAA', fontSize: 16, fontWeight: '600' },
+  cancelText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
   confirmBtn: {
     flex: 2,
     height: 52,
     borderRadius: 12,
-    backgroundColor: '#FF6B35',
+    backgroundColor: '#FFFFFF',   // 白底，在主題色 footer 上形成對比
     alignItems: 'center',
     justifyContent: 'center',
   },
-  confirmBtnDisabled: { backgroundColor: '#884422' },
-  confirmText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+  confirmBtnDisabled: { backgroundColor: 'rgba(255,255,255,0.4)' },
+  confirmText: { fontSize: 16, fontWeight: '700' },   // 顏色由 inline 傳入
 });

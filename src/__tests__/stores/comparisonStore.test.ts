@@ -1,14 +1,9 @@
 import { act } from '@testing-library/react-native';
 import { useComparisonStore } from '@/stores/comparisonStore';
 
-const p1 = {
-  id: 'p1', takenAt: '2026-01-01T00:00:00.000Z', note: null,
-  thumbPath: '/t1.jpg', gridPath: '/g1.jpg', detailPath: '/d1.jpg', fullPath: '/f1.jpg',
-};
-const p2 = {
-  id: 'p2', takenAt: '2026-05-01T00:00:00.000Z', note: null,
-  thumbPath: '/t2.jpg', gridPath: '/g2.jpg', detailPath: '/d2.jpg', fullPath: '/f2.jpg',
-};
+const base = { note: null, brightness: 1.0, contrast: 1.0, weight: null, chest: null, waist: null, lowerWaist: null, hip: null };
+const p1 = { id: 'p1', takenAt: '2026-01-01T00:00:00.000Z', ...base, thumbPath: '/t1.jpg', gridPath: '/g1.jpg', detailPath: '/d1.jpg', fullPath: '/f1.jpg', photoType: 'front' as const };
+const p2 = { id: 'p2', takenAt: '2026-05-01T00:00:00.000Z', ...base, thumbPath: '/t2.jpg', gridPath: '/g2.jpg', detailPath: '/d2.jpg', fullPath: '/f2.jpg', photoType: 'side' as const };
 
 beforeEach(() => {
   useComparisonStore.getState().clearComparison();

@@ -58,10 +58,10 @@ const panelStyles = StyleSheet.create({
     height: PANEL_W * (4 / 3),
     overflow: 'hidden',
     borderRadius: 6,
-    backgroundColor: '#1A1A1A',
+    backgroundColor: '#F0F0F0',
   },
   photo: { width: PANEL_W, height: PANEL_W * (4 / 3) },
-  date: { color: '#AAAAAA', fontSize: 11, marginTop: 6 },
+  date: { color: '#666666', fontSize: 11, marginTop: 6 },
 });
 
 interface ComparisonPanelProps {
@@ -100,6 +100,6 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   panels: { flexDirection: 'row', flex: 1 },
   divider: { width: 2, backgroundColor: '#2A2A2A' },
-  diff: { color: '#888888', fontSize: 13, textAlign: 'center', marginTop: 12 },
-  hint: { color: '#444444', fontSize: 11, textAlign: 'center', marginTop: 4 },
+  diff: { color: '#555555', fontSize: 13, textAlign: 'center', marginTop: 12 },
+  hint: { color: '#AAAAAA', fontSize: 11, textAlign: 'center', marginTop: 4 },
 });

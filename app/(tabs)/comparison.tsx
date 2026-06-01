@@ -5,7 +5,9 @@ import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 import { useBodyPhotos } from '@/hooks/useBodyPhotos';
+import { useSwipeBack } from '@/hooks/useSwipeBack';
 import { ComparisonPanel } from '@/components/ComparisonPanel';
+import { TabHeader } from '@/components/TabHeader';
 import { useComparisonStore } from '@/stores/comparisonStore';
 import type { BodyPhoto } from '@/types/bodyPhoto';
 
@@ -67,13 +69,14 @@ export default function ComparisonScreen() {
   const { photos } = useBodyPhotos('desc');
   const { leftPhoto, rightPhoto, setLeftPhoto, setRightPhoto } = useComparisonStore();
   const [pickerFor, setPickerFor] = useState<SlotSide | null>(null);
+  const swipeHandlers = useSwipeBack();
 
   if (photos.length < 2) {
     return (
-      <SafeAreaView style={styles.container}>
-        <Text style={styles.header}>身型對比</Text>
+      <SafeAreaView style={styles.container} {...swipeHandlers}>
+        <TabHeader title="身型對比" />
         <View style={styles.emptyContainer} testID="insufficient-photos">
-          <Ionicons name={'git-compare-outline' as IoniconsName} size={64} color="#444444" />
+          <Ionicons name={'git-compare-outline' as IoniconsName} size={64} color="#CCCCCC" />
           <Text style={styles.emptyText}>至少需要 2 張照片</Text>
           <Text style={styles.emptySubtitle}>先去目前身材頁拍攝身型照吧！</Text>
         </View>
@@ -82,8 +85,8 @@ export default function ComparisonScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.header}>身型對比</Text>
+    <SafeAreaView style={styles.container} {...swipeHandlers}>
+      <TabHeader title="身型對比" />
 
       {leftPhoto && rightPhoto ? (
         <ComparisonPanel leftPhoto={leftPhoto} rightPhoto={rightPhoto} />
@@ -99,7 +102,7 @@ export default function ComparisonScreen() {
               <Image source={{ uri: leftPhoto.detailPath }} style={styles.slotPhoto} resizeMode="cover" />
             ) : (
               <>
-                <Ionicons name={'add-circle-outline' as IoniconsName} size={36} color="#555" />
+                <Ionicons name={'add-circle-outline' as IoniconsName} size={36} color="#BBBBBB" />
                 <Text style={styles.slotHint}>選擇照片</Text>
               </>
             )}
@@ -117,7 +120,7 @@ export default function ComparisonScreen() {
               <Image source={{ uri: rightPhoto.detailPath }} style={styles.slotPhoto} resizeMode="cover" />
             ) : (
               <>
-                <Ionicons name={'add-circle-outline' as IoniconsName} size={36} color="#555" />
+                <Ionicons name={'add-circle-outline' as IoniconsName} size={36} color="#BBBBBB" />
                 <Text style={styles.slotHint}>選擇照片</Text>
               </>
             )}
@@ -137,25 +140,25 @@ export default function ComparisonScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121212' },
-  header: { color: '#FFFFFF', fontSize: 22, fontWeight: '700', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16 },
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  header: { color: '#333333', fontSize: 22, fontWeight: '700', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16 },
   slotsRow: { flexDirection: 'row', paddingHorizontal: 8, gap: 0 },
   slot: {
     flex: 1,
     height: SLOT_H,
-    backgroundColor: '#1A1A1A',
+    backgroundColor: '#F5F5F5',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#2A2A2A',
+    borderColor: '#E0E0E0',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     overflow: 'hidden',
   },
   slotPhoto: { width: '100%', height: '100%' },
-  slotHint: { color: '#555', fontSize: 13 },
-  divider: { width: 2, backgroundColor: '#2A2A2A', marginVertical: 0 },
+  slotHint: { color: '#AAAAAA', fontSize: 13 },
+  divider: { width: 1, backgroundColor: '#E0E0E0', marginVertical: 0 },
   emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  emptyText: { color: '#CCCCCC', fontSize: 18, fontWeight: '600' },
-  emptySubtitle: { color: '#666666', fontSize: 14 },
+  emptyText: { color: '#333333', fontSize: 18, fontWeight: '600' },
+  emptySubtitle: { color: '#888888', fontSize: 14 },
 });

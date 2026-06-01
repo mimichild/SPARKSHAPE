@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSQLiteContext } from 'expo-sqlite';
 import type { BodyPhoto, BodyPhotoInput } from '@/types/bodyPhoto';
-import { getAllBodyPhotos, insertBodyPhoto, deleteBodyPhoto } from '@/services/bodyPhotoService';
+import { getAllBodyPhotos, insertBodyPhoto, deleteBodyPhoto, updateBodyPhotoMeta } from '@/services/bodyPhotoService';
 
 interface UseBodyPhotosResult {
   photos: BodyPhoto[];
@@ -9,6 +9,7 @@ interface UseBodyPhotosResult {
   reload: () => Promise<void>;
   addPhoto: (input: BodyPhotoInput) => Promise<BodyPhoto>;
   removePhoto: (id: string) => Promise<void>;
+  updatePhotoMeta: (id: string, updates: Parameters<typeof updateBodyPhotoMeta>[2]) => Promise<void>;
 }
 
 export function useBodyPhotos(order: 'asc' | 'desc' = 'desc'): UseBodyPhotosResult {
@@ -44,5 +45,13 @@ export function useBodyPhotos(order: 'asc' | 'desc' = 'desc'): UseBodyPhotosResu
     [db, reload],
   );
 
-  return { photos, loading, reload, addPhoto, removePhoto };
+  const updatePhotoMeta = useCallback(
+    async (id: string, updates: Parameters<typeof updateBodyPhotoMeta>[2]): Promise<void> => {
+      await updateBodyPhotoMeta(db, id, updates);
+      await reload();
+    },
+    [db, reload],
+  );
+
+  return { photos, loading, reload, addPhoto, removePhoto, updatePhotoMeta };
 }

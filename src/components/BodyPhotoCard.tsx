@@ -40,8 +40,8 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     padding: 4,
     borderWidth: 0.5,
-    borderColor: '#2A2A2A',
-    backgroundColor: '#1A1A1A',
+    borderColor: '#E0E0E0',
+    backgroundColor: '#F5F5F5',
     overflow: 'hidden',
   },
   image: {

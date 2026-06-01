@@ -1,15 +1,25 @@
 import { Stack } from 'expo-router';
 import { StyleSheet } from 'react-native';
+import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SQLiteProvider } from 'expo-sqlite';
 import { initDB } from '@/services/bodyPhotoService';
 import { DB_NAME } from '@/constants/db';
+import { useSettingsStore } from '@/stores/settingsStore';
+
+function SettingsLoader() {
+  const loadSettings = useSettingsStore((s) => s.loadSettings);
+  useEffect(() => { loadSettings(); }, []);
+  return null;
+}
 
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={styles.root}>
+      <SettingsLoader />
       <SQLiteProvider databaseName={DB_NAME} onInit={initDB}>
         <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         </Stack>
       </SQLiteProvider>
@@ -18,5 +28,5 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#121212' },
+  root: { flex: 1, backgroundColor: '#FFFFFF' },
 });
