@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { ComponentProps } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { useBodyPhotos } from '@/hooks/useBodyPhotos';
@@ -23,7 +23,7 @@ import type { BodyPhoto, PhotoType } from '@/types/bodyPhoto';
 
 type IoniconsName = ComponentProps<typeof Ionicons>['name'];
 
-// ── 可縮放照片格（flex 高度，填滿可用空間） ─────────────────────────────────
+// ── 可縮放照片格（flex 高度，預設填滿框高，不裁切原始照片） ─────────────────
 
 function PhotoPanel({
   photo,
@@ -43,8 +43,11 @@ function PhotoPanel({
   const savedTx = useSharedValue(0);
   const savedTy = useSharedValue(0);
 
+  const frameRef = useRef<View>(null);
+  const initialSet = useRef(false);
+
   const pinch = Gesture.Pinch()
-    .onUpdate((e) => { scale.value = Math.max(1, Math.min(5, savedScale.value * e.scale)); })
+    .onUpdate((e) => { scale.value = Math.max(0.5, Math.min(8, savedScale.value * e.scale)); })
     .onEnd(() => { savedScale.value = scale.value; });
 
   const pan = Gesture.Pan()
@@ -58,12 +61,31 @@ function PhotoPanel({
     transform: [{ translateX: tx.value }, { translateY: ty.value }, { scale: scale.value }],
   }));
 
+  // 計算「填滿框高」的初始縮放比例
+  // resizeMode="contain" 依較小比例縮放 → 若寬度是限制因素，高度留白
+  // 我們希望預設填滿高度：額外縮放 = fillHeight_scale / contain_scale
+  function computeInitialScale() {
+    if (!photo || initialSet.current) return;
+    frameRef.current?.measure((_x, _y, frameW, frameH) => {
+      if (frameW <= 0 || frameH <= 0) return;
+      Image.getSize(photo.fullPath, (imgW, imgH) => {
+        const containScale    = Math.min(frameW / imgW, frameH / imgH);
+        const fillHeightScale = frameH / imgH;
+        const initialZoom = fillHeightScale / containScale;
+        if (initialZoom > 1) {
+          scale.value      = initialZoom;
+          savedScale.value = initialZoom;
+        }
+        initialSet.current = true;
+      });
+    });
+  }
+
   const labelColor = label === 'Before' ? '#7BAFC4' : themeColor;
 
   return (
     <View style={ps.column}>
-      {/* 照片框：flex:1 填滿剩餘高度 */}
-      <View style={ps.frame}>
+      <View ref={frameRef} style={ps.frame} onLayout={computeInitialScale}>
         {photo ? (
           <GestureDetector gesture={Gesture.Simultaneous(pinch, pan)}>
             <Animated.View style={[StyleSheet.absoluteFill, animStyle]}>
@@ -82,7 +104,6 @@ function PhotoPanel({
         )}
       </View>
 
-      {/* Before / After 和日期 */}
       <View style={ps.meta}>
         <Text style={[ps.label, { color: labelColor }]}>{label}</Text>
         <Text style={ps.date}>{dateStr}</Text>
