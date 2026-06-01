@@ -102,7 +102,7 @@ export function SettingsSheet({ visible, onClose }: Props) {
           </View>
 
           {/* ── 目前身高 ── */}
-          <Text style={[s.sectionTitle, { marginTop: 20 }]}>目前身高</Text>
+          <Text style={[s.sectionTitle, { marginTop: 20, color: localTheme }]}>目前身高</Text>
           <View style={[s.heightRow, { borderColor: localTheme + '66' }]}>
             <TextInput
               style={s.heightInput}
@@ -118,7 +118,7 @@ export function SettingsSheet({ visible, onClose }: Props) {
           </View>
 
           {/* ── 主題顏色 ── */}
-          <Text style={[s.sectionTitle, { marginTop: 20 }]}>主題顏色</Text>
+          <Text style={[s.sectionTitle, { marginTop: 20, color: localTheme }]}>主題顏色</Text>
           <View style={s.colorGrid}>
             {THEME_COLORS.map((color) => (
               <TouchableOpacity

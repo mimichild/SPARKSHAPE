@@ -103,36 +103,36 @@ export default function WelcomeScreen() {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#FFFFFF' },
-  topSpace: { flex: 1.8 },
-  midSpace:  { flex: 2.2 },
+  topSpace: { flex: 0.5 },
+  midSpace:  { flex: 0.5 },
 
   hero: { alignItems: 'center', paddingHorizontal: 36 },
   title: {
-    fontSize: 34,
+    fontSize: 36,             // 稍大，與參考圖一致
     fontWeight: '700',
     letterSpacing: 8,
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 32,
   },
   subtitle: {
-    fontSize: 13,
+    fontSize: 14,             // 稍大
     color: '#666666',
     textAlign: 'center',
     letterSpacing: 0.5,
-    lineHeight: 21,
+    lineHeight: 22,
     fontWeight: '400',
   },
 
   footer: {
-    paddingHorizontal: 28,
-    paddingBottom: 12,
+    paddingHorizontal: 24,
+    paddingBottom: 20,
     alignItems: 'center',
-    gap: 14,
+    gap: 22,
   },
   settingsRow: { flexDirection: 'row', alignItems: 'center' },
-  snowIcon: { fontSize: 15, color: '#9DC0D0', lineHeight: 20 },
+  snowIcon: { fontSize: 22, color: '#9DC0D0', lineHeight: 30 },  // 1.5x
   settingsLabel: {
-    fontSize: 13,
+    fontSize: 20,             // 13 × 1.5 = 19.5 → 20
     color: '#AAAAAA',
     letterSpacing: 1.5,
     fontWeight: '300',
@@ -150,7 +150,7 @@ const s = StyleSheet.create({
 
   ctaBtn: {
     width: '100%',
-    height: 56,
+    height: 54,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
