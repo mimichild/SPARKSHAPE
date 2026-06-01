@@ -47,9 +47,10 @@ interface AlignTarget {
 interface ReviewTarget {
   uri:      string;
   photoType: PhotoType;
-  editId?:  string;                         // 有值 = 編輯，無值 = 新增
+  editId?:  string;
   initialBrightness?:   number;
   initialContrast?:     number;
+  initialTakenAt?:      string;
   initialMeasurements?: Partial<BodyMeasurements>;
 }
 
@@ -115,6 +116,7 @@ export default function CurrentBodyScreen() {
     if (target.editId) {
       // ── 編輯模式：只更新 meta，不建立新記錄 ──
       await updatePhotoMeta(target.editId, {
+        takenAt:     result.takenAt,
         brightness:  result.brightness,
         contrast:    result.contrast,
         weight:      result.weight,
@@ -134,7 +136,7 @@ export default function CurrentBodyScreen() {
       const photoId = `photo-${Date.now()}`;
       const paths   = await saveBodyPhoto(target.uri, photoId);
       const input: BodyPhotoInput = {
-        takenAt: new Date().toISOString(), note: null, ...paths,
+        takenAt: result.takenAt, note: null, ...paths,
         photoType:  target.photoType,
         brightness: result.brightness,
         contrast:   result.contrast,
@@ -162,6 +164,7 @@ export default function CurrentBodyScreen() {
             editId:    photo.id,
             initialBrightness:   photo.brightness,
             initialContrast:     photo.contrast,
+            initialTakenAt:      photo.takenAt,
             initialMeasurements: {
               weight: photo.weight, chest: photo.chest,
               waist:  photo.waist,  lowerWaist: photo.lowerWaist,
@@ -216,6 +219,7 @@ export default function CurrentBodyScreen() {
             mode={reviewTarget.editId ? 'edit' : 'new'}
             initialBrightness={reviewTarget.initialBrightness}
             initialContrast={reviewTarget.initialContrast}
+            initialTakenAt={reviewTarget.initialTakenAt}
             initialMeasurements={reviewTarget.initialMeasurements}
             onConfirm={handleReviewConfirm}
             onRetake={() => setReviewTarget(null)}

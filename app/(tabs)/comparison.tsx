@@ -1,9 +1,10 @@
 import { Dimensions, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { useBodyPhotos } from '@/hooks/useBodyPhotos';
 import { useSwipeBack } from '@/hooks/useSwipeBack';
 import { ComparisonPanel } from '@/components/ComparisonPanel';
@@ -66,10 +67,15 @@ const sheetStyles = StyleSheet.create({
 });
 
 export default function ComparisonScreen() {
-  const { photos } = useBodyPhotos('desc');
+  const { photos, reload } = useBodyPhotos('desc');
   const { leftPhoto, rightPhoto, setLeftPhoto, setRightPhoto } = useComparisonStore();
   const [pickerFor, setPickerFor] = useState<SlotSide | null>(null);
   const swipeHandlers = useSwipeBack();
+
+  // 切換到此 Tab 時重新載入
+  useFocusEffect(
+    useCallback(() => { reload(); }, [reload]),
+  );
 
   if (photos.length < 2) {
     return (

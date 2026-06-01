@@ -1,6 +1,7 @@
 import { Alert, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
+import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 import type { PhotoType } from '@/types/bodyPhoto';
@@ -12,6 +13,18 @@ interface Props {
   visible: boolean;
   onClose: () => void;
   onPhotoPicked: (uri: string, photoType: PhotoType) => void;
+}
+
+/**
+ * 正規化 EXIF 旋轉：讓 Image.getSize() 與畫面顯示方向一致，
+ * 避免裁切座標計算錯誤。
+ */
+async function normalizeOrientation(uri: string): Promise<string> {
+  const result = await manipulateAsync(uri, [], {
+    compress: 0.95,
+    format: SaveFormat.JPEG,
+  });
+  return result.uri;
 }
 
 export function CameraSheet({ visible, onClose, onPhotoPicked }: Props) {
@@ -29,12 +42,12 @@ export function CameraSheet({ visible, onClose, onPhotoPicked }: Props) {
     onClose();
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: 'images',
-      allowsEditing: false,
-      aspect: [3, 4],
+      allowsEditing: false, // 使用我們自己的 AlignScreen 對齊
       quality: 1,
     });
     if (!result.canceled && result.assets[0]) {
-      onPhotoPicked(result.assets[0].uri, photoType);
+      const uri = await normalizeOrientation(result.assets[0].uri);
+      onPhotoPicked(uri, photoType);
     }
   }
 
@@ -47,12 +60,13 @@ export function CameraSheet({ visible, onClose, onPhotoPicked }: Props) {
     onClose();
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: 'images',
-      allowsEditing: true,
-      aspect: [3, 4],
+      allowsEditing: false, // 跳過系統裁切介面，直接進入 AlignScreen
       quality: 1,
     });
     if (!result.canceled && result.assets[0]) {
-      onPhotoPicked(result.assets[0].uri, photoType);
+      // 正規化 EXIF 旋轉，確保裁切計算正確
+      const uri = await normalizeOrientation(result.assets[0].uri);
+      onPhotoPicked(uri, photoType);
     }
   }
 
@@ -62,10 +76,10 @@ export function CameraSheet({ visible, onClose, onPhotoPicked }: Props) {
     action: () => void;
     accent: string;
   }[] = [
-    { label: '拍正面照', icon: 'camera',         action: () => shoot('front'), accent: themeColor },
-    { label: '拍側面照', icon: 'camera-outline',  action: () => shoot('side'),  accent: '#7BAFC4' },
-    { label: '上傳正面照', icon: 'images',         action: () => pick('front'),  accent: themeColor },
-    { label: '上傳側面照', icon: 'images-outline', action: () => pick('side'),   accent: '#7BAFC4' },
+    { label: '拍正面照',  icon: 'camera',         action: () => shoot('front'), accent: themeColor },
+    { label: '拍側面照',  icon: 'camera-outline',  action: () => shoot('side'),  accent: '#7BAFC4' },
+    { label: '上傳正面照', icon: 'images',          action: () => pick('front'),  accent: themeColor },
+    { label: '上傳側面照', icon: 'images-outline',  action: () => pick('side'),   accent: '#7BAFC4' },
   ];
 
   return (
