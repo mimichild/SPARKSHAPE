@@ -64,10 +64,11 @@ const styles = StyleSheet.create({
   cell: {
     width: CELL_W,
     height: CELL_H,
-    borderWidth: 0.5,
-    borderColor: '#E0E0E0',
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
     backgroundColor: '#F5F5F5',
     overflow: 'hidden',
+    borderRadius: 2,  // 觸發 GPU 硬體加速裁切，消除鋸齒毛邊
   },
   image: { ...StyleSheet.absoluteFillObject },
   date: {
