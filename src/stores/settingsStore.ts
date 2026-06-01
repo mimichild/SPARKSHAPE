@@ -22,6 +22,7 @@ interface SettingsData {
   openCameraOnLaunch: boolean;
   autoSavePhotos: boolean;
   themeColor: string;
+  height: string;   // 身高，單位 cm，例如 "165"
 }
 
 interface SettingsState extends SettingsData {
@@ -40,6 +41,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   openCameraOnLaunch: false,
   autoSavePhotos: false,
   themeColor: DEFAULT_THEME,
+  height: '',
   loaded: false,
   pendingCameraOpen: false,
   hasAutoLaunched: false,
@@ -66,6 +68,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         openCameraOnLaunch: s.openCameraOnLaunch,
         autoSavePhotos: s.autoSavePhotos,
         themeColor: s.themeColor,
+        height: s.height,
         ...patch,
       };
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data));

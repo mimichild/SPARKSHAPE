@@ -232,8 +232,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   silhouette: {
-    width:   Math.round(FRAME_W * 0.84),
-    height:  Math.round(FRAME_H * 0.84),
+    width:   Math.round(FRAME_W * 0.94),
+    height:  Math.round(FRAME_H * 0.94),
     opacity: 0.65,
   },
   frameBorder: {

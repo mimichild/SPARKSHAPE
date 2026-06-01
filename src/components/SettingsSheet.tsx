@@ -1,9 +1,11 @@
 import {
+  Keyboard,
   Modal,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -26,6 +28,7 @@ export function SettingsSheet({ visible, onClose }: Props) {
   const [localOpenCamera, setLocalOpenCamera] = useState(store.openCameraOnLaunch);
   const [localAutoSave,   setLocalAutoSave]   = useState(store.autoSavePhotos);
   const [localTheme,      setLocalTheme]      = useState(store.themeColor);
+  const [localHeight,     setLocalHeight]     = useState(store.height ?? '');
 
   // 每次開啟面板時同步最新 store 值
   useEffect(() => {
@@ -33,14 +36,17 @@ export function SettingsSheet({ visible, onClose }: Props) {
       setLocalOpenCamera(store.openCameraOnLaunch);
       setLocalAutoSave(store.autoSavePhotos);
       setLocalTheme(store.themeColor);
+      setLocalHeight(store.height ?? '');
     }
   }, [visible]);
 
   async function handleApply() {
+    Keyboard.dismiss();
     await store.applySettings({
       openCameraOnLaunch: localOpenCamera,
       autoSavePhotos:     localAutoSave,
       themeColor:         localTheme,
+      height:             localHeight.trim(),
     });
     onClose();
   }
@@ -95,8 +101,24 @@ export function SettingsSheet({ visible, onClose }: Props) {
             />
           </View>
 
+          {/* ── 目前身高 ── */}
+          <Text style={[s.sectionTitle, { marginTop: 20 }]}>目前身高</Text>
+          <View style={[s.heightRow, { borderColor: localTheme + '66' }]}>
+            <TextInput
+              style={s.heightInput}
+              value={localHeight}
+              onChangeText={setLocalHeight}
+              placeholder="請輸入身高"
+              placeholderTextColor="#CCC"
+              keyboardType="decimal-pad"
+              returnKeyType="done"
+              onSubmitEditing={Keyboard.dismiss}
+            />
+            <Text style={s.heightUnit}>cm</Text>
+          </View>
+
           {/* ── 主題顏色 ── */}
-          <Text style={s.sectionTitle}>主題顏色</Text>
+          <Text style={[s.sectionTitle, { marginTop: 20 }]}>主題顏色</Text>
           <View style={s.colorGrid}>
             {THEME_COLORS.map((color) => (
               <TouchableOpacity
@@ -192,12 +214,30 @@ const s = StyleSheet.create({
     lineHeight: 17,
   },
 
+  /* 身高輸入 */
+  heightRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: '#FAFAFA',
+    marginBottom: 4,
+  },
+  heightInput: {
+    flex: 1,
+    fontSize: 17,
+    color: '#333',
+    fontWeight: '600',
+  },
+  heightUnit: { fontSize: 13, color: '#AAA', marginLeft: 4 },
+
   /* 主題顏色 */
   sectionTitle: {
     fontSize: 15,
     fontWeight: '500',
     color: '#555',
-    marginTop: 20,
     marginBottom: 14,
   },
   colorGrid: {
