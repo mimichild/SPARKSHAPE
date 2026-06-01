@@ -19,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 import { SimpleSlider } from './SimpleSlider';
 import { useSettingsStore } from '@/stores/settingsStore';
+import { calcBMI, bmiLabel } from '@/utils/bmi';
 import type { BodyMeasurements, PhotoType } from '@/types/bodyPhoto';
 
 type IoniconsName = ComponentProps<typeof Ionicons>['name'];
@@ -183,6 +184,7 @@ export function ReviewScreen({
   onConfirm, onRetake,
 }: Props) {
   const themeColor = useSettingsStore((s) => s.themeColor);
+  const height     = useSettingsStore((s) => s.height);
 
   const [brightnessSlider, setBrightnessSlider] = useState(
     initialBrightness != null ? initialBrightness / 2 : 0.5,
@@ -201,6 +203,10 @@ export function ReviewScreen({
     initialTakenAt ? new Date(initialTakenAt) : new Date(),
   );
   const [showCalendar, setShowCalendar] = useState(false);
+
+  // BMI 自動計算（依設定身高 + 已輸入體重）
+  const bmi     = calcBMI(measurements.weight, height);
+  const bmiDesc = bmiLabel(bmi);
 
   // ── 照片縮放手勢 ────────────────────────────────────────────────────────
   const scale     = useSharedValue(1);
@@ -341,24 +347,42 @@ export function ReviewScreen({
             <Text style={s.sectionTitle}>
               身體數據 <Text style={s.optional}>（所有欄位皆選填）</Text>
             </Text>
+
             <View style={s.fieldsGrid}>
               {FIELDS.map((f) => (
-                <View key={f.key} style={s.fieldBox}>
-                  <Text style={s.fieldLabel}>{f.label}</Text>
-                  <View style={[s.fieldInput, { borderColor: themeColor + '55' }]}>
-                    <TextInput
-                      style={s.fieldText}
-                      placeholder="--"
-                      placeholderTextColor="#CCC"
-                      keyboardType="decimal-pad"
-                      value={measurements[f.key]}
-                      onChangeText={(v) => setMeasurements((p) => ({ ...p, [f.key]: v }))}
-                      returnKeyType="done"
-                      onSubmitEditing={Keyboard.dismiss}
-                    />
-                    <Text style={s.fieldUnit}>{f.unit}</Text>
+                <>
+                  <View key={f.key} style={s.fieldBox}>
+                    <Text style={s.fieldLabel}>{f.label}</Text>
+                    <View style={[s.fieldInput, { borderColor: themeColor + '55' }]}>
+                      <TextInput
+                        style={s.fieldText}
+                        placeholder="--"
+                        placeholderTextColor="#CCC"
+                        keyboardType="decimal-pad"
+                        value={measurements[f.key]}
+                        onChangeText={(v) => setMeasurements((p) => ({ ...p, [f.key]: v }))}
+                        returnKeyType="done"
+                        onSubmitEditing={Keyboard.dismiss}
+                      />
+                      <Text style={s.fieldUnit}>{f.unit}</Text>
+                    </View>
                   </View>
-                </View>
+                  {/* BMI 緊接在體重後面 */}
+                  {f.key === 'weight' && (
+                    <View key="bmi" style={s.fieldBox}>
+                      <Text style={s.fieldLabel}>
+                        BMI{!height ? '（需填身高）' : '（自動）'}
+                      </Text>
+                      <View style={[s.fieldInput, { borderColor: themeColor + '55' }]}>
+                        <TextInput
+                          style={[s.fieldText, { color: bmi ? themeColor : '#CCC' }]}
+                          value={bmi ?? '--'}
+                          editable={false}
+                        />
+                      </View>
+                    </View>
+                  )}
+                </>
               ))}
             </View>
           </View>
@@ -409,6 +433,15 @@ const s = StyleSheet.create({
     letterSpacing: 0.5, marginBottom: 14,
   },
   optional: { fontSize: 11, color: '#AAAAAA', fontWeight: '400' },
+  bmiRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    borderWidth: 1.5, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10,
+    backgroundColor: '#FAFAFA', marginBottom: 12,
+  },
+  bmiLabel: { fontSize: 13, color: '#777', fontWeight: '500' },
+  bmiValue: { fontSize: 20, fontWeight: '800' },
+  bmiDesc:  { fontSize: 12, fontWeight: '400', color: '#888' },
+  bmiHint:  { fontSize: 11, color: '#BBBBBB', marginBottom: 10 },
 
   sliderRow:   { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   sliderLabel: { width: 32, fontSize: 13, color: '#666', fontWeight: '500' },

@@ -28,6 +28,7 @@ import { TabHeader } from '@/components/TabHeader';
 import { saveBodyPhoto } from '@/services/photoStorageService';
 import { deleteBodyPhotoFiles } from '@/services/photoStorageService';
 import { useSettingsStore } from '@/stores/settingsStore';
+import { calcBMI, bmiLabel } from '@/utils/bmi';
 import { getMotivationalMessage } from '@/utils/motivationalMessages';
 import type { BodyMeasurements, BodyPhoto, BodyPhotoInput, PhotoType } from '@/types/bodyPhoto';
 
@@ -62,7 +63,7 @@ export default function CurrentBodyScreen() {
   const [reviewTarget, setReviewTarget] = useState<ReviewTarget | null>(null);
   const [noteText, setNoteText] = useState('');
 
-  const { pendingCameraOpen, clearPendingCameraOpen, autoSavePhotos, themeColor } =
+  const { pendingCameraOpen, clearPendingCameraOpen, autoSavePhotos, themeColor, height } =
     useSettingsStore();
   const swipeHandlers = useSwipeBack();
 
@@ -318,24 +319,28 @@ export default function CurrentBodyScreen() {
                 <Text style={s.sectionTitle}>身體數據</Text>
               </View>
               <View style={s.measureGrid}>
-                {([
+                {(() => {
+                const bmi = calcBMI(measureSrc.weight, height);
+                const items = [
                   { label: '體重',   value: measureSrc.weight,     unit: 'kg' },
+                  ...(bmi ? [{ label: 'BMI', value: bmi, unit: '' }] : []),
                   { label: '胸圍',   value: measureSrc.chest,      unit: 'cm' },
                   { label: '腰圍',   value: measureSrc.waist,      unit: 'cm' },
                   { label: '下腰圍', value: measureSrc.lowerWaist, unit: 'cm' },
                   { label: '臀圍',   value: measureSrc.hip,        unit: 'cm' },
-                ] as const)
+                ] as { label: string; value: string | null; unit: string }[];
+                return items
                   .filter((item) => item.value !== null)
                   .map((item) => (
                     <View key={item.label} style={[s.measureChip, { borderColor: themeColor + '55' }]}>
                       <Text style={s.measureChipLabel}>{item.label}</Text>
                       <Text style={[s.measureChipValue, { color: themeColor }]}>
                         {item.value}
-                        <Text style={s.measureChipUnit}> {item.unit}</Text>
+                        {item.unit ? <Text style={s.measureChipUnit}> {item.unit}</Text> : null}
                       </Text>
                     </View>
-                  ))
-                }
+                  ));
+              })()}
               </View>
             </View>
           )}
