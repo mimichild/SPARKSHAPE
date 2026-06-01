@@ -27,10 +27,13 @@ interface SettingsData {
 interface SettingsState extends SettingsData {
   loaded: boolean;
   pendingCameraOpen: boolean;
+  /** session flag：冷啟動時觸發一次後設為 true，返回首頁時不再重複觸發 */
+  hasAutoLaunched: boolean;
   loadSettings: () => Promise<void>;
   applySettings: (patch: Partial<SettingsData>) => Promise<void>;
   triggerCameraOpen: () => void;
   clearPendingCameraOpen: () => void;
+  markAutoLaunched: () => void;
 }
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
@@ -39,6 +42,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   themeColor: DEFAULT_THEME,
   loaded: false,
   pendingCameraOpen: false,
+  hasAutoLaunched: false,
 
   loadSettings: async () => {
     try {
@@ -72,4 +76,5 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   triggerCameraOpen: () => set({ pendingCameraOpen: true }),
   clearPendingCameraOpen: () => set({ pendingCameraOpen: false }),
+  markAutoLaunched: () => set({ hasAutoLaunched: true }),
 }));

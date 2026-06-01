@@ -14,12 +14,16 @@ import { useSettingsStore } from '@/stores/settingsStore';
 
 export default function WelcomeScreen() {
   const [settingsVisible, setSettingsVisible] = useState(false);
-  const { themeColor, openCameraOnLaunch, triggerCameraOpen, loaded } = useSettingsStore();
+  const {
+    themeColor, openCameraOnLaunch, triggerCameraOpen,
+    loaded, hasAutoLaunched, markAutoLaunched,
+  } = useSettingsStore();
 
-  // 若設定「開啟時直接用相機打開」，跳過首頁直接進入相機
+  // 若設定「開啟時直接用相機打開」，只在冷啟動時觸發一次（hasAutoLaunched 防重複）
   useEffect(() => {
     if (!loaded) return;
-    if (openCameraOnLaunch) {
+    if (openCameraOnLaunch && !hasAutoLaunched) {
+      markAutoLaunched();
       triggerCameraOpen();
       router.replace('/(tabs)/current');
     }

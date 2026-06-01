@@ -106,9 +106,10 @@ export default function PhotoWallScreen() {
   const isEmpty = !loading && filtered.length === 0;
 
   return (
-    <SafeAreaView style={styles.container} {...swipeHandlers}>
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColor }]} {...swipeHandlers}>
       <TabHeader title={isSelecting ? `已選 ${selectedIds.size} 張` : '照片牆'} rightComponent={Toggle} />
 
+      <View style={styles.content}>
       {isEmpty ? (
         <View style={styles.emptyContainer} testID="empty-wall">
           <Ionicons name={'images-outline' as IoniconsName} size={64} color="#CCCCCC" />
@@ -155,6 +156,7 @@ export default function PhotoWallScreen() {
       )}
 
       <PhotoPreviewModal photo={preview} onClose={() => setPreview(null)} />
+      </View>
     </SafeAreaView>
   );
 }
@@ -202,7 +204,8 @@ const toolbar = StyleSheet.create({
 });
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  container: { flex: 1 },
+  content:   { flex: 1, backgroundColor: '#FFFFFF' },
   emptyContainer: {
     flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12,
   },

@@ -447,9 +447,10 @@ export default function ComparisonScreen() {
   const hasComparison = confirmedDates.length === 2;
 
   return (
-    <SafeAreaView style={s.root} {...swipeHandlers}>
+    <SafeAreaView style={[s.root, { backgroundColor: themeColor }]} {...swipeHandlers}>
       <TabHeader title="身型對比" rightComponent={TypeToggle} />
 
+      <View style={s.content}>
       {/* 篩選日期列 */}
       <View style={s.filterRow}>
         <TouchableOpacity
@@ -504,6 +505,7 @@ export default function ComparisonScreen() {
         onClose={() => setShowPicker(false)}
         themeColor={themeColor}
       />
+      </View>
     </SafeAreaView>
   );
 }
@@ -521,7 +523,8 @@ const ts = StyleSheet.create({
 
 // ── 主樣式 ────────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#FFFFFF' },
+  root:    { flex: 1 },
+  content: { flex: 1, backgroundColor: '#FFFFFF' },
 
   filterRow: {
     paddingHorizontal: 16, paddingVertical: 10,
