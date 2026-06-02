@@ -19,7 +19,8 @@
       "infoPlist": {
         "NSCameraUsageDescription": "SPARKSHAPE needs camera access to take body photos",
         "NSPhotoLibraryUsageDescription": "SPARKSHAPE needs photo library access to upload body photos",
-        "NSPhotoLibraryAddUsageDescription": "SPARKSHAPE needs permission to save photos to your library"
+        "NSPhotoLibraryAddUsageDescription": "SPARKSHAPE needs permission to save photos to your library",
+        "LSApplicationQueriesSchemes": ["sparkplate", "sparkfit"]
       }
     },
     "android": {

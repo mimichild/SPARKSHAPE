@@ -1,6 +1,9 @@
 import {
+  Alert,
   Animated,
   Easing,
+  Linking,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -11,6 +14,28 @@ import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { SettingsSheet } from '@/components/SettingsSheet';
 import { useSettingsStore } from '@/stores/settingsStore';
+
+// 開啟 SPARK 系列 App（Android: Intent / iOS: URL Scheme）
+async function openApp(androidPackage: string, iosScheme: string) {
+  if (Platform.OS === 'ios') {
+    const url = `${iosScheme}://`;
+    const canOpen = await Linking.canOpenURL(url).catch(() => false);
+    if (canOpen) {
+      await Linking.openURL(url);
+    } else {
+      Alert.alert('找不到 App', '請確認手機已安裝此應用程式。');
+    }
+  } else {
+    // Android: 與 adb am start -n PACKAGE/.MainActivity 等效
+    const url = `intent://launch#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=${androidPackage};component=${androidPackage}/.MainActivity;end`;
+    const canOpen = await Linking.canOpenURL(url).catch(() => false);
+    if (canOpen) {
+      await Linking.openURL(url).catch(() => null);
+    } else {
+      Alert.alert('找不到 App', '請確認手機已安裝此應用程式。');
+    }
+  }
+}
 
 export default function WelcomeScreen() {
   const [settingsVisible, setSettingsVisible] = useState(false);
@@ -73,11 +98,17 @@ export default function WelcomeScreen() {
 
         {/* 系列 App 連結 */}
         <View style={s.appsRow}>
-          <TouchableOpacity activeOpacity={0.6}>
+          <TouchableOpacity
+            activeOpacity={0.6}
+            onPress={() => openApp('com.sparkplate.app', 'sparkplate')}
+          >
             <Text style={s.appLink}>SPARK PLATE</Text>
           </TouchableOpacity>
           <View style={s.appLinkGap} />
-          <TouchableOpacity activeOpacity={0.6}>
+          <TouchableOpacity
+            activeOpacity={0.6}
+            onPress={() => openApp('com.sparkfit.app', 'sparkfit')}
+          >
             <Text style={s.appLink}>SPARK FIT</Text>
           </TouchableOpacity>
         </View>

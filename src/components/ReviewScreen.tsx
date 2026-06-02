@@ -2,8 +2,6 @@ import {
   Dimensions,
   Image,
   Keyboard,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,14 +10,12 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 import { SimpleSlider } from './SimpleSlider';
 import { useSettingsStore } from '@/stores/settingsStore';
-import { calcBMI, bmiLabel } from '@/utils/bmi';
+import { calcBMI } from '@/utils/bmi';
 import type { BodyMeasurements, PhotoType } from '@/types/bodyPhoto';
 
 type IoniconsName = ComponentProps<typeof Ionicons>['name'];
@@ -32,7 +28,7 @@ const PREVIEW_H = Math.round(SW * (4 / 3));
 export interface ReviewResult extends BodyMeasurements {
   brightness: number;
   contrast:   number;
-  takenAt:    string;   // ISO 8601
+  takenAt:    string;
 }
 
 interface MeasurementField {
@@ -49,7 +45,6 @@ const FIELDS: MeasurementField[] = [
   { key: 'hip',        label: '臀圍',   unit: 'cm' },
 ];
 
-// 滑桿 0~1 → 倍率 0~2（0.5 = 1.0× 不調整）
 function toMultiplier(v: number) { return v * 2.0; }
 
 interface Props {
@@ -64,87 +59,96 @@ interface Props {
   onRetake:  () => void;
 }
 
-// ── 小月曆元件 ────────────────────────────────────────────────────────────────
+// ── 照片預覽（memo 防止填資料時重複渲染）──────────────────────────────────────
+
+const PhotoPreview = memo(
+  ({ uri, brightness, contrast }: { uri: string; brightness: number; contrast: number }) => (
+    <Image
+      source={{ uri }}
+      style={[s.preview, { filter: [{ brightness }, { contrast }] } as any]}
+      resizeMode="cover"
+    />
+  ),
+  (prev: { uri: string; brightness: number; contrast: number },
+   next: { uri: string; brightness: number; contrast: number }) =>
+    prev.uri === next.uri &&
+    prev.brightness === next.brightness &&
+    prev.contrast === next.contrast,
+);
+
+// ── 小月曆 ─────────────────────────────────────────────────────────────────
 
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六'];
 
-function MiniCalendar({
-  selected,
-  onSelect,
-  themeColor,
-}: {
-  selected: Date;
-  onSelect: (d: Date) => void;
-  themeColor: string;
-}) {
-  const [viewYear,  setViewYear]  = useState(selected.getFullYear());
-  const [viewMonth, setViewMonth] = useState(selected.getMonth());
-
-  const today      = new Date();
-  const todayKey   = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
-  const selectedKey = `${selected.getFullYear()}-${selected.getMonth()}-${selected.getDate()}`;
-
-  function prevMonth() {
-    if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11); }
-    else setViewMonth(m => m - 1);
-  }
-  function nextMonth() {
-    if (viewMonth === 11) { setViewYear(y => y + 1); setViewMonth(0); }
-    else setViewMonth(m => m + 1);
-  }
-
-  const firstWeekday = new Date(viewYear, viewMonth, 1).getDay();
-  const daysInMonth  = new Date(viewYear, viewMonth + 1, 0).getDate();
+function getGrid(year: number, month: number): (number | null)[][] {
+  const first = new Date(year, month, 1).getDay();
+  const days  = new Date(year, month + 1, 0).getDate();
   const cells: (number | null)[] = [
-    ...Array(firstWeekday).fill(null),
-    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+    ...Array(first).fill(null),
+    ...Array.from({ length: days }, (_, i) => i + 1),
   ];
   while (cells.length % 7 !== 0) cells.push(null);
+  const rows: (number | null)[][] = [];
+  for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7));
+  return rows;
+}
+
+function MiniCalendar({ selected, onSelect, themeColor, initDate }: {
+  selected: Date; onSelect: (d: Date) => void; themeColor: string; initDate?: string;
+}) {
+  const ref = initDate ? new Date(initDate) : new Date();
+  const [year,  setYear]  = useState(ref.getFullYear());
+  const [month, setMonth] = useState(ref.getMonth());
+  const availableSet = new Set<string>();
+
+  function pad(n: number) { return String(n).padStart(2, '0'); }
+  function dateKey(y: number, m: number, d: number) { return `${y}-${pad(m + 1)}-${pad(d)}`; }
+  function prevMonth() { if (month === 0) { setYear(y => y - 1); setMonth(11); } else setMonth(m => m - 1); }
+  function nextMonth() { if (month === 11) { setYear(y => y + 1); setMonth(0);  } else setMonth(m => m + 1); }
+
+  const grid  = getGrid(year, month);
+  const today = new Date();
+  const todayKey   = dateKey(today.getFullYear(), today.getMonth(), today.getDate());
+  const selectedKey = dateKey(selected.getFullYear(), selected.getMonth(), selected.getDate());
 
   return (
     <View style={cal.wrapper}>
-      {/* 月份導航 */}
-      <View style={cal.nav}>
-        <TouchableOpacity onPress={prevMonth} style={cal.navBtn}>
+      <View style={cal.navRow}>
+        <TouchableOpacity style={cal.navBtn} onPress={() => setYear(y => y - 1)}>
           <Ionicons name={'chevron-back' as IoniconsName} size={18} color="#555" />
         </TouchableOpacity>
-        <Text style={cal.navTitle}>{viewYear}年{viewMonth + 1}月</Text>
-        <TouchableOpacity onPress={nextMonth} style={cal.navBtn}>
+        <Text style={cal.navYear}>{year}年</Text>
+        <TouchableOpacity style={cal.navBtn} onPress={() => setYear(y => y + 1)}>
           <Ionicons name={'chevron-forward' as IoniconsName} size={18} color="#555" />
         </TouchableOpacity>
       </View>
-
-      {/* 星期標題 */}
-      <View style={cal.row}>
-        {WEEKDAYS.map((w) => (
-          <Text key={w} style={cal.weekday}>{w}</Text>
-        ))}
+      <View style={cal.navRow}>
+        <TouchableOpacity style={cal.navBtn} onPress={prevMonth}>
+          <Ionicons name={'chevron-back' as IoniconsName} size={16} color="#777" />
+        </TouchableOpacity>
+        <Text style={cal.navMonth}>{month + 1}月</Text>
+        <TouchableOpacity style={cal.navBtn} onPress={nextMonth}>
+          <Ionicons name={'chevron-forward' as IoniconsName} size={16} color="#777" />
+        </TouchableOpacity>
       </View>
-
-      {/* 日期格子 */}
-      {Array.from({ length: cells.length / 7 }, (_, row) => (
-        <View key={row} style={cal.row}>
-          {cells.slice(row * 7, row * 7 + 7).map((day, col) => {
-            if (!day) return <View key={col} style={cal.cell} />;
-            const key = `${viewYear}-${viewMonth}-${day}`;
-            const isToday    = key === todayKey;
-            const isSelected = key === selectedKey;
+      <View style={cal.weekRow}>
+        {WEEKDAYS.map(w => <Text key={w} style={cal.weekday}>{w}</Text>)}
+      </View>
+      {grid.map((row, ri) => (
+        <View key={ri} style={cal.weekRow}>
+          {row.map((day, ci) => {
+            if (!day) return <View key={ci} style={cal.cell} />;
+            const key     = dateKey(year, month, day);
+            const isSel   = key === selectedKey;
+            const isToday = key === todayKey;
             return (
               <TouchableOpacity
-                key={col}
-                style={[
-                  cal.cell,
-                  isSelected && { backgroundColor: themeColor, borderRadius: 20 },
-                  !isSelected && isToday && cal.todayCell,
-                ]}
-                onPress={() => onSelect(new Date(viewYear, viewMonth, day))}
+                key={ci}
+                style={[cal.cell, isSel && { backgroundColor: themeColor, borderRadius: cal.cell.height / 2 }, !isSel && isToday && cal.todayCell]}
+                onPress={() => onSelect(new Date(year, month, day))}
                 activeOpacity={0.7}
               >
-                <Text style={[
-                  cal.dayText,
-                  isSelected && { color: '#FFF', fontWeight: '700' },
-                  !isSelected && isToday && { color: themeColor, fontWeight: '600' },
-                ]}>
+                <Text style={[cal.dayBase, isSel && cal.daySelected, !isSel && isToday && { color: themeColor, fontWeight: '600' }]}>
                   {day}
                 </Text>
               </TouchableOpacity>
@@ -157,26 +161,20 @@ function MiniCalendar({
 }
 
 const cal = StyleSheet.create({
-  wrapper: {
-    backgroundColor: '#FAFAFA',
-    borderRadius: 12,
-    padding: 10,
-    marginTop: 8,
-  },
-  nav: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between', marginBottom: 8,
-  },
-  navBtn:   { padding: 6 },
-  navTitle: { fontSize: 14, fontWeight: '700', color: '#333' },
-  row:      { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 2 },
-  weekday:  { width: 32, textAlign: 'center', fontSize: 11, color: '#999', fontWeight: '500' },
-  cell:     { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  todayCell:{ borderWidth: 1, borderColor: '#CCC', borderRadius: 20 },
-  dayText:  { fontSize: 13, color: '#444' },
+  wrapper: { paddingHorizontal: 16, paddingBottom: 8 },
+  navRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+  navBtn:  { padding: 8 },
+  navYear: { fontSize: 18, fontWeight: '700', color: '#222', minWidth: 90, textAlign: 'center' },
+  navMonth:{ fontSize: 16, fontWeight: '600', color: '#444', minWidth: 50, textAlign: 'center' },
+  weekRow: { flexDirection: 'row', justifyContent: 'space-around', marginVertical: 1 },
+  weekday: { width: 32, textAlign: 'center', fontSize: 11, color: '#AAA', fontWeight: '500' },
+  cell:    { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+  todayCell: { borderWidth: 1, borderColor: '#CCC', borderRadius: 16 },
+  dayBase:   { fontSize: 14, color: '#444' },
+  daySelected: { color: '#FFF', fontWeight: '700' },
 });
 
-// ── 主元件 ────────────────────────────────────────────────────────────────────
+// ── 主元件 ─────────────────────────────────────────────────────────────────
 
 export function ReviewScreen({
   photoUri, photoType, mode = 'new',
@@ -199,56 +197,17 @@ export function ReviewScreen({
     lowerWaist: initialMeasurements?.lowerWaist ?? '',
     hip:        initialMeasurements?.hip        ?? '',
   });
-  const [selectedDate,  setSelectedDate]  = useState<Date>(
+  const [selectedDate, setSelectedDate] = useState<Date>(
     initialTakenAt ? new Date(initialTakenAt) : new Date(),
   );
   const [showCalendar, setShowCalendar] = useState(false);
 
-  // BMI 自動計算（依設定身高 + 已輸入體重）
-  const bmi     = calcBMI(measurements.weight, height);
-  const bmiDesc = bmiLabel(bmi);
+  // BMI 自動計算
+  const bmi = calcBMI(measurements.weight, height);
 
-  // ── 照片縮放手勢 ────────────────────────────────────────────────────────
-  const scale     = useSharedValue(1);
-  const savedScale= useSharedValue(1);
-  const tx        = useSharedValue(0);
-  const ty        = useSharedValue(0);
-  const savedTx   = useSharedValue(0);
-  const savedTy   = useSharedValue(0);
-
-  const pinch = Gesture.Pinch()
-    .onUpdate((e) => { scale.value = Math.max(1, Math.min(5, savedScale.value * e.scale)); })
-    .onEnd(() => { savedScale.value = scale.value; });
-
-  const pan = Gesture.Pan()
-    .minPointers(1)
-    .onUpdate((e) => {
-      tx.value = savedTx.value + e.translationX;
-      ty.value = savedTy.value + e.translationY;
-    })
-    .onEnd(() => { savedTx.value = tx.value; savedTy.value = ty.value; });
-
-  const photoGesture = Gesture.Simultaneous(pinch, pan);
-
-  const photoAnimStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: tx.value },
-      { translateY: ty.value },
-      { scale: scale.value },
-    ],
-  }));
-
-  function resetPhoto() {
-    scale.value = 1; savedScale.value = 1;
-    tx.value = 0;    savedTx.value = 0;
-    ty.value = 0;    savedTy.value = 0;
-  }
-
-  // ── 確認儲存 ─────────────────────────────────────────────────────────────
   function handleConfirm() {
     Keyboard.dismiss();
     const toNull = (s: string) => s.trim() === '' ? null : s.trim();
-    // 將選取日期合入 ISO（保留時間為當天午時，避免時區問題）
     const d = new Date(selectedDate);
     d.setHours(12, 0, 0, 0);
     onConfirm({
@@ -267,7 +226,6 @@ export function ReviewScreen({
   const retakeLabel = mode === 'edit' ? '取消' : '重新拍攝';
   const brightness  = toMultiplier(brightnessSlider);
   const contrast    = toMultiplier(contrastSlider);
-
   const dateDisplay = `${selectedDate.getFullYear()}/${String(selectedDate.getMonth() + 1).padStart(2, '0')}/${String(selectedDate.getDate()).padStart(2, '0')}`;
 
   return (
@@ -281,131 +239,120 @@ export function ReviewScreen({
         <View style={s.headerPlaceholder} />
       </View>
 
-      {/* 照片預覽（在 ScrollView 外，避免閃爍；支援縮放/拖曳） */}
-      <View style={s.previewWrap}>
-        <GestureDetector gesture={photoGesture}>
-          <Animated.View style={[StyleSheet.absoluteFill, photoAnimStyle]}>
-            <Image
-              source={{ uri: photoUri }}
-              style={[s.preview, { filter: [{ brightness }, { contrast }] } as any]}
-              resizeMode="cover"
+      {/* 全部放進 ScrollView，解決鍵盤遮擋問題 */}
+      <ScrollView
+        style={s.scroll}
+        contentContainerStyle={s.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
+        {/* 照片（memo 防止填資料時重繪） */}
+        <View style={s.previewWrap}>
+          <PhotoPreview uri={photoUri} brightness={brightness} contrast={contrast} />
+        </View>
+
+        {/* 亮度 / 對比 */}
+        <View style={s.section}>
+          <Text style={s.sectionTitle}>照片調整</Text>
+          <View style={s.sliderRow}>
+            <Text style={s.sliderLabel}>亮度</Text>
+            <View style={s.sliderWrap}>
+              <SimpleSlider value={brightnessSlider} onChange={setBrightnessSlider} color={themeColor} leftLabel="暗" rightLabel="亮" />
+            </View>
+          </View>
+          <View style={s.sliderRow}>
+            <Text style={s.sliderLabel}>對比</Text>
+            <View style={s.sliderWrap}>
+              <SimpleSlider value={contrastSlider} onChange={setContrastSlider} color={themeColor} leftLabel="柔" rightLabel="強" />
+            </View>
+          </View>
+        </View>
+
+        {/* 拍攝日期 */}
+        <View style={s.section}>
+          <Text style={s.sectionTitle}>拍攝日期</Text>
+          <TouchableOpacity
+            style={[s.dateRow, { borderColor: themeColor + '66' }]}
+            onPress={() => setShowCalendar((v) => !v)}
+            activeOpacity={0.75}
+          >
+            <Ionicons name={'calendar-outline' as IoniconsName} size={18} color={themeColor} />
+            <Text style={[s.dateText, { color: themeColor }]}>{dateDisplay}</Text>
+            <Ionicons name={(showCalendar ? 'chevron-up' : 'chevron-down') as IoniconsName} size={16} color="#AAA" />
+          </TouchableOpacity>
+          {showCalendar && (
+            <MiniCalendar
+              selected={selectedDate}
+              onSelect={(d) => { setSelectedDate(d); setShowCalendar(false); }}
+              themeColor={themeColor}
+              initDate={initialTakenAt}
             />
-          </Animated.View>
-        </GestureDetector>
-        {/* 雙擊重置縮放提示 */}
-        <TouchableOpacity style={s.resetBtn} onPress={resetPhoto} activeOpacity={0.7}>
-          <Text style={s.resetText}>重置</Text>
-        </TouchableOpacity>
-      </View>
+          )}
+        </View>
 
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={s.scroll}
-        >
-          {/* 亮度 / 對比 */}
-          <View style={s.section}>
-            <Text style={s.sectionTitle}>照片調整</Text>
-            <View style={s.sliderRow}>
-              <Text style={s.sliderLabel}>亮度</Text>
-              <View style={s.sliderWrap}>
-                <SimpleSlider value={brightnessSlider} onChange={setBrightnessSlider} color={themeColor} leftLabel="暗" rightLabel="亮" />
-              </View>
-            </View>
-            <View style={s.sliderRow}>
-              <Text style={s.sliderLabel}>對比</Text>
-              <View style={s.sliderWrap}>
-                <SimpleSlider value={contrastSlider} onChange={setContrastSlider} color={themeColor} leftLabel="柔" rightLabel="強" />
-              </View>
-            </View>
-          </View>
-
-          {/* 修改日期 */}
-          <View style={s.section}>
-            <Text style={s.sectionTitle}>拍攝日期</Text>
-            <TouchableOpacity
-              style={[s.dateRow, { borderColor: themeColor + '66' }]}
-              onPress={() => setShowCalendar((v) => !v)}
-              activeOpacity={0.75}
-            >
-              <Ionicons name={'calendar-outline' as IoniconsName} size={18} color={themeColor} />
-              <Text style={[s.dateText, { color: themeColor }]}>{dateDisplay}</Text>
-              <Ionicons name={(showCalendar ? 'chevron-up' : 'chevron-down') as IoniconsName} size={16} color="#AAA" />
-            </TouchableOpacity>
-            {showCalendar && (
-              <MiniCalendar
-                selected={selectedDate}
-                onSelect={(d) => { setSelectedDate(d); setShowCalendar(false); }}
-                themeColor={themeColor}
-              />
-            )}
-          </View>
-
-          {/* 身體數據 */}
-          <View style={s.section}>
-            <Text style={s.sectionTitle}>
-              身體數據 <Text style={s.optional}>（所有欄位皆選填）</Text>
-            </Text>
-
-            <View style={s.fieldsGrid}>
-              {FIELDS.map((f) => (
-                <>
-                  <View key={f.key} style={s.fieldBox}>
-                    <Text style={s.fieldLabel}>{f.label}</Text>
+        {/* 身體數據 */}
+        <View style={s.section}>
+          <Text style={s.sectionTitle}>
+            身體數據 <Text style={s.optional}>（所有欄位皆選填）</Text>
+          </Text>
+          <View style={s.fieldsGrid}>
+            {FIELDS.map((f) => (
+              <>
+                <View key={f.key} style={s.fieldBox}>
+                  <Text style={s.fieldLabel}>{f.label}</Text>
+                  <View style={[s.fieldInput, { borderColor: themeColor + '55' }]}>
+                    <TextInput
+                      style={s.fieldText}
+                      placeholder="--"
+                      placeholderTextColor="#CCC"
+                      keyboardType="decimal-pad"
+                      value={measurements[f.key]}
+                      onChangeText={(v) => setMeasurements((p) => ({ ...p, [f.key]: v }))}
+                      returnKeyType="done"
+                      onSubmitEditing={Keyboard.dismiss}
+                    />
+                    <Text style={s.fieldUnit}>{f.unit}</Text>
+                  </View>
+                </View>
+                {f.key === 'weight' && (
+                  <View key="bmi" style={s.fieldBox}>
+                    <Text style={s.fieldLabel}>BMI{!height ? '（需填身高）' : '（自動）'}</Text>
                     <View style={[s.fieldInput, { borderColor: themeColor + '55' }]}>
                       <TextInput
-                        style={s.fieldText}
-                        placeholder="--"
-                        placeholderTextColor="#CCC"
-                        keyboardType="decimal-pad"
-                        value={measurements[f.key]}
-                        onChangeText={(v) => setMeasurements((p) => ({ ...p, [f.key]: v }))}
-                        returnKeyType="done"
-                        onSubmitEditing={Keyboard.dismiss}
+                        style={[s.fieldText, { color: bmi ? themeColor : '#CCC' }]}
+                        value={bmi ?? '--'}
+                        editable={false}
                       />
-                      <Text style={s.fieldUnit}>{f.unit}</Text>
                     </View>
                   </View>
-                  {/* BMI 緊接在體重後面 */}
-                  {f.key === 'weight' && (
-                    <View key="bmi" style={s.fieldBox}>
-                      <Text style={s.fieldLabel}>
-                        BMI{!height ? '（需填身高）' : '（自動）'}
-                      </Text>
-                      <View style={[s.fieldInput, { borderColor: themeColor + '55' }]}>
-                        <TextInput
-                          style={[s.fieldText, { color: bmi ? themeColor : '#CCC' }]}
-                          value={bmi ?? '--'}
-                          editable={false}
-                        />
-                      </View>
-                    </View>
-                  )}
-                </>
-              ))}
-            </View>
+                )}
+              </>
+            ))}
           </View>
+        </View>
 
-          {/* 確認儲存 */}
-          <TouchableOpacity
-            style={[s.confirmBtn, { backgroundColor: themeColor }]}
-            onPress={handleConfirm}
-            activeOpacity={0.85}
-          >
-            <Text style={s.confirmText}>確認儲存</Text>
-          </TouchableOpacity>
+        {/* 確認儲存 */}
+        <TouchableOpacity
+          style={[s.confirmBtn, { backgroundColor: themeColor }]}
+          onPress={handleConfirm}
+          activeOpacity={0.85}
+        >
+          <Text style={s.confirmText}>確認儲存</Text>
+        </TouchableOpacity>
 
-          <View style={{ height: 20 }} />
-        </ScrollView>
-      </KeyboardAvoidingView>
+        <View style={{ height: 32 }} />
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
+// ── 樣式 ───────────────────────────────────────────────────────────────────
+
 const s = StyleSheet.create({
-  root:   { flex: 1, backgroundColor: '#FFFFFF' },
-  scroll: { paddingBottom: 20 },
+  root:        { flex: 1, backgroundColor: '#FFFFFF' },
+  scroll:      { flex: 1 },
+  scrollContent: { paddingBottom: 8 },
 
   header: {
     flexDirection: 'row', alignItems: 'center',
@@ -416,16 +363,8 @@ const s = StyleSheet.create({
   headerTitle:       { flex: 1, color: '#FFF', fontSize: 17, fontWeight: '700', textAlign: 'center' },
   headerPlaceholder: { width: 80 },
 
-  previewWrap: { backgroundColor: '#F0F0F0', overflow: 'hidden', height: PREVIEW_H },
+  previewWrap: { backgroundColor: '#F0F0F0' },
   preview:     { width: SW, height: PREVIEW_H },
-
-  resetBtn: {
-    position: 'absolute', bottom: 8, right: 8,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    paddingHorizontal: 10, paddingVertical: 4,
-    borderRadius: 12,
-  },
-  resetText: { color: '#FFF', fontSize: 11 },
 
   section: { marginTop: 20, paddingHorizontal: 16 },
   sectionTitle: {
@@ -433,15 +372,6 @@ const s = StyleSheet.create({
     letterSpacing: 0.5, marginBottom: 14,
   },
   optional: { fontSize: 11, color: '#AAAAAA', fontWeight: '400' },
-  bmiRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    borderWidth: 1.5, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10,
-    backgroundColor: '#FAFAFA', marginBottom: 12,
-  },
-  bmiLabel: { fontSize: 13, color: '#777', fontWeight: '500' },
-  bmiValue: { fontSize: 20, fontWeight: '800' },
-  bmiDesc:  { fontSize: 12, fontWeight: '400', color: '#888' },
-  bmiHint:  { fontSize: 11, color: '#BBBBBB', marginBottom: 10 },
 
   sliderRow:   { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   sliderLabel: { width: 32, fontSize: 13, color: '#666', fontWeight: '500' },
@@ -472,4 +402,14 @@ const s = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   confirmText: { color: '#FFF', fontSize: 17, fontWeight: '600', letterSpacing: 1 },
+
+  bmiRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    borderWidth: 1.5, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10,
+    backgroundColor: '#FAFAFA', marginBottom: 12,
+  },
+  bmiLabel: { fontSize: 13, color: '#777', fontWeight: '500' },
+  bmiValue: { fontSize: 20, fontWeight: '800' },
+  bmiDesc:  { fontSize: 12, fontWeight: '400', color: '#888' },
+  bmiHint:  { fontSize: 11, color: '#BBBBBB', marginBottom: 10 },
 });
