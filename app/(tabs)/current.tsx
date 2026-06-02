@@ -193,6 +193,50 @@ export default function CurrentBodyScreen() {
     ]);
   }
 
+  // ── 編輯數據按鈕：直接開啟 ReviewScreen 編輯 measureSrc ─────────────────
+  function handleEditData() {
+    const src = latestFront ?? latestSide;
+    if (!src) return;
+    setReviewTarget({
+      uri:       src.fullPath,
+      photoType: src.photoType,
+      editId:    src.id,
+      initialBrightness:   src.brightness,
+      initialContrast:     src.contrast,
+      initialTakenAt:      src.takenAt,
+      initialMeasurements: {
+        weight: src.weight, chest: src.chest,
+        waist:  src.waist,  lowerWaist: src.lowerWaist,
+        hip:    src.hip,
+      },
+    });
+  }
+
+  // ── 刪除數據按鈕：確認後刪除最新的正面＋側面照片 ────────────────────────
+  function handleDeleteData() {
+    Alert.alert(
+      '確認刪除',
+      '確認要刪除嗎？照片或資料會完全消失喔',
+      [
+        { text: '取消', style: 'cancel' },
+        {
+          text: '確認刪除',
+          style: 'destructive',
+          onPress: async () => {
+            if (latestFront) {
+              await removePhoto(latestFront.id);
+              deleteBodyPhotoFiles(latestFront.id).catch(() => {});
+            }
+            if (latestSide) {
+              await removePhoto(latestSide.id);
+              deleteBodyPhotoFiles(latestSide.id).catch(() => {});
+            }
+          },
+        },
+      ],
+    );
+  }
+
   // ── Modal 顯示 ───────────────────────────────────────────────────────────
 
   if (alignTarget) {
@@ -372,6 +416,28 @@ export default function CurrentBodyScreen() {
             />
           </View>
 
+          {/* ── 編輯 / 刪除數據 ── */}
+          {hasAny && (
+            <View style={s.dataActions}>
+              <TouchableOpacity
+                style={[s.dataActionBtn, { borderColor: themeColor }]}
+                onPress={handleEditData}
+                activeOpacity={0.7}
+              >
+                <Ionicons name={'create-outline' as IoniconsName} size={15} color={themeColor} />
+                <Text style={[s.dataActionText, { color: themeColor }]}>編輯數據</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[s.dataActionBtn, { borderColor: '#E05555' }]}
+                onPress={handleDeleteData}
+                activeOpacity={0.7}
+              >
+                <Ionicons name={'trash-outline' as IoniconsName} size={15} color="#E05555" />
+                <Text style={[s.dataActionText, { color: '#E05555' }]}>刪除數據</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           <View style={{ height: 88 }} />
         </ScrollView>
       </TouchableWithoutFeedback>
@@ -452,6 +518,30 @@ const s = StyleSheet.create({
     borderWidth: 1.5, borderRadius: 12, padding: 14,
     fontSize: 14, lineHeight: 22, color: '#333',
     minHeight: 100, backgroundColor: '#FAFAFA',
+  },
+
+  /* 編輯/刪除數據按鈕 */
+  dataActions: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 16,
+    marginTop: 20,
+  },
+  dataActionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    height: 44,
+    borderWidth: 1.5,
+    borderRadius: 10,
+    backgroundColor: '#FAFAFA',
+  },
+  dataActionText: {
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
 
   fab: {
