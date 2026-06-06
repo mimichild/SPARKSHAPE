@@ -15,25 +15,18 @@ import { useEffect, useRef, useState } from 'react';
 import { SettingsSheet } from '@/components/SettingsSheet';
 import { useSettingsStore } from '@/stores/settingsStore';
 
-// 開啟 SPARK 系列 App（Android: Intent / iOS: URL Scheme）
-async function openApp(androidPackage: string, iosScheme: string) {
-  if (Platform.OS === 'ios') {
-    const url = `${iosScheme}://`;
+// 開啟 SPARK 系列 App（iOS / Android 均使用 URL Scheme）
+async function openApp(scheme: string) {
+  try {
+    const url = `${scheme}://`;
     const canOpen = await Linking.canOpenURL(url).catch(() => false);
-    if (canOpen) {
-      await Linking.openURL(url);
-    } else {
+    if (!canOpen) {
       Alert.alert('找不到 App', '請確認手機已安裝此應用程式。');
+      return;
     }
-  } else {
-    // Android: 與 adb am start -n PACKAGE/.MainActivity 等效
-    const url = `intent://launch#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=${androidPackage};component=${androidPackage}/.MainActivity;end`;
-    const canOpen = await Linking.canOpenURL(url).catch(() => false);
-    if (canOpen) {
-      await Linking.openURL(url).catch(() => null);
-    } else {
-      Alert.alert('找不到 App', '請確認手機已安裝此應用程式。');
-    }
+    await Linking.openURL(url);
+  } catch {
+    Alert.alert('找不到 App', '請確認手機已安裝此應用程式。');
   }
 }
 
@@ -100,14 +93,14 @@ export default function WelcomeScreen() {
         <View style={s.appsRow}>
           <TouchableOpacity
             activeOpacity={0.6}
-            onPress={() => openApp('com.sparkplate.app', 'sparkplate')}
+            onPress={() => openApp('sparkplate')}
           >
             <Text style={s.appLink}>SPARK PLATE</Text>
           </TouchableOpacity>
           <View style={s.appLinkGap} />
           <TouchableOpacity
             activeOpacity={0.6}
-            onPress={() => openApp('com.sparkfit.app', 'sparkfit')}
+            onPress={() => openApp('sparkfit')}
           >
             <Text style={s.appLink}>SPARK FIT</Text>
           </TouchableOpacity>
@@ -147,7 +140,7 @@ const s = StyleSheet.create({
   },
   subtitle: {
     fontSize: 14,             // 稍大
-    color: '#666666',
+    color: '#BBBBBB',
     textAlign: 'center',
     letterSpacing: 0.5,
     lineHeight: 22,
