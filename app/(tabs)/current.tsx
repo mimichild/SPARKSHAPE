@@ -83,12 +83,42 @@ export default function CurrentBodyScreen() {
   ) ?? null;
 
   // 鼓勵語
-  const sessionDates = new Set(photos.map((p) => p.takenAt.slice(0, 10)));
-  const firstDate    = photos.length > 0 ? new Date(photos[photos.length - 1].takenAt) : new Date();
-  const daysSince    = Math.floor((Date.now() - firstDate.getTime()) / 86400000);
-  const motivation   = getMotivationalMessage({
+  // takenAt 以本地正午存為 UTC（setHours(12,0,0,0) + toISOString），
+  // 必須用本地日期做比較，避免 UTC 日期在深夜跨日誤判。
+  const toLocalDate = (iso: string) => {
+    const d = new Date(iso);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+  const now          = new Date();
+  const todayStr     = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const sessionDates = new Set(photos.map((p) => toLocalDate(p.takenAt)));
+  const firstDate    = photos.length > 0 ? new Date(photos[photos.length - 1].takenAt) : now;
+  const daysSince    = Math.floor((now.getTime() - firstDate.getTime()) / 86400000);
+  const todayPhotos  = photos.filter((p) => toLocalDate(p.takenAt) === todayStr);
+  const hasTodayPhoto = todayPhotos.length > 0;
+  const hasTodayData  = todayPhotos.some(
+    (p) => p.weight !== null || p.chest !== null || p.waist !== null ||
+           p.lowerWaist !== null || p.hip !== null,
+  );
+  const hasUpdatedToday = hasTodayPhoto && hasTodayData;
+
+  // 計算連續天數 streak（從今天往前推，每天都有照片才算連續）
+  const streakDays = (() => {
+    let count = 0;
+    const d = new Date(now);
+    while (true) {
+      const s = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      if (!sessionDates.has(s)) break;
+      count++;
+      d.setDate(d.getDate() - 1);
+    }
+    return count;
+  })();
+
+  const motivation = getMotivationalMessage({
     photoCount: photos.length, sessionCount: sessionDates.size,
     daysSinceFirst: daysSince, today: new Date(),
+    hasUpdatedToday, streakDays,
   });
 
   // ── 流程：Camera Sheet → AlignScreen → ReviewScreen ──────────────────────
