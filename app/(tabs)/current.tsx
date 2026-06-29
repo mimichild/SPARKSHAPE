@@ -3,7 +3,9 @@ import {
   Dimensions,
   Image,
   Keyboard,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -313,6 +315,10 @@ export default function CurrentBodyScreen() {
     <SafeAreaView style={[s.root, { backgroundColor: themeColor }]} {...swipeHandlers}>
       <TabHeader title="目前身材" />
 
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
       <View style={s.contentArea}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView
@@ -491,6 +497,7 @@ export default function CurrentBodyScreen() {
         }}
       />
       </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

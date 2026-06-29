@@ -2,6 +2,8 @@ import {
   Dimensions,
   Image,
   Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -239,7 +241,10 @@ export function ReviewScreen({
         <View style={s.headerPlaceholder} />
       </View>
 
-      {/* 全部放進 ScrollView，解決鍵盤遮擋問題 */}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
       <ScrollView
         style={s.scroll}
         contentContainerStyle={s.scrollContent}
@@ -343,6 +348,7 @@ export function ReviewScreen({
 
         <View style={{ height: 32 }} />
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
