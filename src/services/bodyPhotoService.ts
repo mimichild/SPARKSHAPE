@@ -144,6 +144,23 @@ export async function deletePhotosByDateAndType(
   return rows.map((r) => r.id);
 }
 
+export async function clearBodyPhotos(db: SQLiteDatabase): Promise<void> {
+  await db.runAsync(`DELETE FROM ${TABLE_BODY_PHOTOS}`);
+}
+
+export async function insertBodyPhotoRaw(db: SQLiteDatabase, photo: BodyPhoto): Promise<void> {
+  await db.runAsync(
+    `INSERT OR IGNORE INTO ${TABLE_BODY_PHOTOS}
+       (id, taken_at, note, thumb_path, grid_path, detail_path, full_path,
+        photo_type, brightness, contrast, weight, chest, waist, lower_waist, hip)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    photo.id, photo.takenAt, photo.note,
+    photo.thumbPath, photo.gridPath, photo.detailPath, photo.fullPath,
+    photo.photoType, photo.brightness, photo.contrast,
+    photo.weight, photo.chest, photo.waist, photo.lowerWaist, photo.hip,
+  );
+}
+
 export async function updateBodyPhotoMeta(
   db: SQLiteDatabase,
   id: string,

@@ -53,3 +53,19 @@ export async function getDailyNote(
   );
   return row ? rowToNote(row) : null;
 }
+
+export async function getAllDailyNotes(db: SQLiteDatabase): Promise<DailyNote[]> {
+  const rows = await db.getAllAsync<DbRow>(`SELECT * FROM ${TABLE} ORDER BY date ASC`);
+  return rows.map(rowToNote);
+}
+
+export async function clearDailyNotes(db: SQLiteDatabase): Promise<void> {
+  await db.runAsync(`DELETE FROM ${TABLE}`);
+}
+
+export async function insertDailyNoteRaw(db: SQLiteDatabase, note: DailyNote): Promise<void> {
+  await db.runAsync(
+    `INSERT OR IGNORE INTO ${TABLE} (id, date, content, created_at) VALUES (?, ?, ?, ?)`,
+    note.id, note.date, note.content, note.createdAt,
+  );
+}
