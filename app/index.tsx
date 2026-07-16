@@ -16,17 +16,38 @@ import { SettingsSheet } from '@/components/SettingsSheet';
 import { useSettingsStore } from '@/stores/settingsStore';
 
 // 開啟 SPARK 系列 App（iOS / Android 均使用 URL Scheme）
+const APP_DOWNLOAD_URLS: Record<string, string> = {
+  sparkplate: 'https://drive.google.com/file/d/1_sbu3LG46hKvYkWJjPbFPii0_V4b4dJd/view?usp=drive_link',
+};
+
 async function openApp(scheme: string) {
   try {
     const url = `${scheme}://`;
     const canOpen = await Linking.canOpenURL(url).catch(() => false);
     if (!canOpen) {
-      Alert.alert('找不到 App', '請確認手機已安裝此應用程式。');
+      const downloadUrl = APP_DOWNLOAD_URLS[scheme];
+      if (downloadUrl) {
+        Alert.alert(
+          '尚未安裝',
+          '找不到此應用程式，是否前往下載？',
+          [
+            { text: '取消', style: 'cancel' },
+            { text: '前往下載', onPress: () => Linking.openURL(downloadUrl) },
+          ],
+        );
+      } else {
+        Alert.alert('找不到 App', '請確認手機已安裝此應用程式。');
+      }
       return;
     }
     await Linking.openURL(url);
   } catch {
-    Alert.alert('找不到 App', '請確認手機已安裝此應用程式。');
+    const downloadUrl = APP_DOWNLOAD_URLS[scheme];
+    if (downloadUrl) {
+      Linking.openURL(downloadUrl);
+    } else {
+      Alert.alert('找不到 App', '請確認手機已安裝此應用程式。');
+    }
   }
 }
 
