@@ -1,0 +1,108 @@
+{
+  "project": "SPARKSHAPE",
+  "last_updated": "2026-07-17",
+  "rules": {
+    "single_active_feature": true,
+    "passing_requires_evidence": true,
+    "do_not_skip_verification": true,
+    "evidence_format": "YYYY-MM-DD | 實際執行的指令 | 關鍵輸出摘要",
+    "details": "狀態機、證據判準與範例見 docs/harness/PLAYBOOK.md"
+  },
+  "status_legend": {
+    "not_started": "尚未開始。",
+    "in_progress": "目前唯一正在進行的功能。",
+    "blocked": "因已記錄的問題無法繼續；notes 必須寫明現象、已嘗試方法、建議解法。",
+    "passing": "verification 全部實際執行過，且 evidence 已依格式記錄。"
+  },
+  "features": [
+    {
+      "id": "ios-001",
+      "priority": 1,
+      "area": "ios",
+      "title": "iOS 模擬器啟動 App 並截圖存證",
+      "user_visible_behavior": "在 iOS 模擬器上可以看到 SPARKSHAPE 啟動並顯示首頁。",
+      "status": "not_started",
+      "verification": [
+        "執行 npx expo run:ios（或 pnpm ios）。",
+        "確認建置成功且模擬器開啟 App、首頁正常渲染無紅屏。",
+        "擷取模擬器截圖存入 docs/ 作為證據。"
+      ],
+      "evidence": [],
+      "notes": "2026-07-17 已成功 build 過一次（fmt/RCTBridge 修復存在被 gitignore 的本機 ios/，勿跑 expo prebuild --clean 以免清掉修復）。本項應可快速通過，但仍需實跑並留證據。"
+    },
+    {
+      "id": "ios-002",
+      "priority": 2,
+      "area": "ios",
+      "title": "模擬器驗證核心流程：資料庫讀寫與相機/相簿權限",
+      "user_visible_behavior": "使用者在 iOS 模擬器上能完成核心操作、看到權限彈窗、重啟後資料仍在。",
+      "status": "not_started",
+      "verification": [
+        "在模擬器完成一次核心新增操作（含從相簿選照片）。",
+        "確認相簿/相機權限彈窗出現且允許後功能正常。",
+        "完全關閉 App 再重開，確認資料仍存在（expo-sqlite 持久化）。"
+      ],
+      "evidence": [],
+      "notes": "模擬器無實體相機，拍照僅驗證權限與不閃退；完整拍照留到實機。"
+    },
+    {
+      "id": "ios-003",
+      "priority": 3,
+      "area": "ios",
+      "title": "模擬器驗證 ZIP 匯出/匯入",
+      "user_visible_behavior": "使用者在 iOS 上能匯出 ZIP 備份並成功匯入還原。",
+      "status": "not_started",
+      "verification": [
+        "建立測試資料後執行匯出，確認 ZIP 產生且分享面板出現。",
+        "清空資料後匯入，確認資料與照片完整還原。"
+      ],
+      "evidence": [],
+      "notes": ""
+    },
+    {
+      "id": "native-001",
+      "priority": 4,
+      "area": "native",
+      "title": "把 fmt/RCTBridge 原生修復轉成 Expo config plugin",
+      "user_visible_behavior": "expo prebuild --clean 或 EAS 雲端建置重新產生 ios/ 後，不需手動修改也能編譯成功。",
+      "status": "not_started",
+      "verification": [
+        "依記憶/文件把兩個修復寫成 config plugin：(1) Podfile post_install 將 fmt 的 CLANG_CXX_LANGUAGE_STANDARD 降為 gnu++17 並設 ios.buildReactNativeFromSource=true；(2) AppDelegate.swift 移除 sourceURL(for bridge:) override。",
+        "備份本機 ios/ 後執行 npx expo prebuild --clean。",
+        "確認重新產生的 ios/ 含有修復內容。",
+        "執行 npx expo run:ios 確認建置成功。"
+      ],
+      "evidence": [],
+      "notes": "ios-004（EAS 建置）的硬前置。修復細節見使用者記憶 project_sparkshape_ios_native_fixes 與 2026-07-17 session。"
+    },
+    {
+      "id": "ios-004",
+      "priority": 5,
+      "area": "ios",
+      "title": "EAS iOS 雲端建置成功",
+      "user_visible_behavior": "EAS Build 產出可安裝的 iOS build。",
+      "status": "not_started",
+      "verification": [
+        "確認 Apple Developer 帳號可用、建立 eas.json（可參考 SPARKWEAR 的當範本）。",
+        "執行 eas build --platform ios。",
+        "確認 expo.dev 建置狀態 finished，記錄 build URL。"
+      ],
+      "evidence": [],
+      "notes": "前置：Apple Developer Program（申請中則標 blocked）＋ native-001 必須先完成。本專案目前沒有 eas.json。"
+    },
+    {
+      "id": "ios-005",
+      "priority": 6,
+      "area": "ios",
+      "title": "TestFlight 內部測試",
+      "user_visible_behavior": "使用者的 iPhone 能從 TestFlight 安裝並正常使用核心功能。",
+      "status": "not_started",
+      "verification": [
+        "eas submit --platform ios 並在 App Store Connect 加入內部測試群組。",
+        "實機安裝啟動，重跑 ios-002 核心流程（含真實相機）。"
+      ],
+      "evidence": [],
+      "notes": "依賴 ios-004。"
+    }
+  ]
+}
