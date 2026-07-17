@@ -125,12 +125,16 @@ export async function exportBackup(
       onProgress(100);
       return { ok: true, fileName };
     } else {
-      const cacheUri = `${FileSystem.cacheDirectory}${fileName}`;
-      await FileSystem.writeAsStringAsync(cacheUri, b64Zip, {
+      // documentDirectory（而非 cacheDirectory）搭配 app.json 的
+      // UIFileSharingEnabled + LSSupportsOpeningDocumentsInPlace，
+      // 讓備份檔案直接出現在「檔案」App 的「我的 iPhone / SPARKSHAPE」，
+      // 不必依賴分享面板「儲存到檔案」是否真的操作成功。
+      const docUri = `${FileSystem.documentDirectory}${fileName}`;
+      await FileSystem.writeAsStringAsync(docUri, b64Zip, {
         encoding: FileSystem.EncodingType.Base64,
       });
       onProgress(95);
-      await Sharing.shareAsync(cacheUri, { mimeType: 'application/zip' });
+      await Sharing.shareAsync(docUri, { mimeType: 'application/zip' });
       onProgress(100);
       return { ok: true, fileName };
     }
