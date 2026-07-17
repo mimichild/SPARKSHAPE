@@ -40,6 +40,9 @@ export function CameraSheet({ visible, onClose, onPhotoPicked }: Props) {
       }
     }
     onClose();
+    // 等這個 sheet Modal 的關閉動畫跑完再開系統相機，
+    // 否則 iOS 上兩個原生 Modal 幾乎同時 present/dismiss 會讓畫面卡死不回應。
+    await new Promise((resolve) => setTimeout(resolve, 350));
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: 'images',
       allowsEditing: false, // 使用我們自己的 AlignScreen 對齊
@@ -58,6 +61,9 @@ export function CameraSheet({ visible, onClose, onPhotoPicked }: Props) {
       return;
     }
     onClose();
+    // 等這個 sheet Modal 的關閉動畫跑完再開系統相簿選擇器，
+    // 否則 iOS 上兩個原生 Modal 幾乎同時 present/dismiss 會讓畫面卡死不回應。
+    await new Promise((resolve) => setTimeout(resolve, 350));
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: 'images',
       allowsEditing: false, // 跳過系統裁切介面，直接進入 AlignScreen
