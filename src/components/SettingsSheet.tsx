@@ -1,7 +1,6 @@
 import {
   Alert,
   Keyboard,
-  Modal,
   ScrollView,
   StyleSheet,
   Switch,
@@ -118,14 +117,15 @@ export function SettingsSheet({ visible, onClose }: Props) {
     onClose();
   }
 
+  // 這裡刻意不用 <Modal>：匯出/匯入流程內部會呼叫 DocumentPicker /
+  // Sharing（也是原生 Modal），iOS 上巢狀開多層原生 Modal 會讓畫面卡死
+  // 不回應（實測會卡在匯入完成、關掉設定面板之後，連首頁按鈕都點不動）。
+  // 改成一般的絕對定位 View 疊在最上層可以避免這個問題（同樣的修法見
+  // SPARKPLATE 的 BackupRestoreModal.tsx）。
+  if (!visible) return null;
+
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      statusBarTranslucent
-      onRequestClose={onClose}
-    >
+    <View style={s.overlay}>
       {/* 半透明背景 */}
       <TouchableOpacity style={s.backdrop} activeOpacity={1} onPress={onClose} />
 
@@ -264,16 +264,25 @@ export function SettingsSheet({ visible, onClose }: Props) {
           </View>
         )}
       </View>
-    </Modal>
+    </View>
   );
 }
 
 const s = StyleSheet.create({
+  overlay: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    zIndex: 999,
+    elevation: 999,
+  },
   backdrop: {
-    flex: 1,
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.25)',
   },
   sheet: {
+    position: 'absolute',
+    left: 0, right: 0, bottom: 0,
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,

@@ -9,11 +9,28 @@
 - 儲存庫根目錄：/Users/mimi/Documents/SPARKSHAPE
 - 標準啟動路徑：`RUN_START_COMMAND=1 ./init.sh`（實際指令見 init.sh 的 START_CMD）
 - 標準驗證路徑：./init.sh（pnpm install + pnpm test；2026-07-17 為 17 tests passed）
-- 目前最高優先級未完成功能：ios-003 模擬器驗證 ZIP 匯出/匯入
+- 目前最高優先級未完成功能：native-001（把 fmt/RCTBridge 原生修復轉成 Expo config plugin）
 - 目前 blocker：無
-- 背景：ios-001、ios-002 已 passing（模擬器啟動、身型照片新增+持久化皆驗證通過）；fmt/RCTBridge 原生修復目前還只在被 gitignore 的本機 ios/（勿跑 expo prebuild --clean，會清掉）；EAS 前必須完成 native-001 config plugin（SPARKPLATE 已有現成寫法可參考複製，見 SPARKPLATE/plugins/withRemoveRCTBridgeSourceURL.js，但 SPARKSHAPE 還多一個 fmt Podfile post_install 修復要處理）
+- 背景：ios-001～ios-003 皆已 passing；fmt/RCTBridge 原生修復目前還只在被 gitignore 的本機 ios/（勿跑 expo prebuild --clean，會清掉）；EAS 前必須完成 native-001 config plugin（SPARKPLATE 已有 RCTBridge 部分的現成寫法可參考複製，見 SPARKPLATE/plugins/withRemoveRCTBridgeSourceURL.js，但 SPARKSHAPE 還多一個 fmt Podfile post_install 修復要處理）
 
 ## 工作階段日誌
+
+### 工作階段 003
+
+- 日期：2026-07-20
+- 本輪目標：完成 ios-003（模擬器驗證 ZIP 匯出/匯入）
+- 已完成：
+  - 匯出備份正常
+  - 匯入時發現真實 bug：匯入完成、關閉設定面板後，首頁「開始使用」按鈕完全無法點擊
+  - 用程式碼比對找到根因：`SettingsSheet.tsx` 用 `<Modal>` 包住整個設定面板，內部匯出/匯入又呼叫 `DocumentPicker`/`Sharing`（也是原生 Modal），iOS 巢狀開多層原生 Modal 會讓畫面卡死不回應——這正是 SPARKPLATE 的 `BackupRestoreModal.tsx` 註解裡已經記錄過、也修過的同一種問題，SPARKSHAPE 沒有套用同樣的修法
+  - 修復：`SettingsSheet.tsx` 改用絕對定位 `View` 取代 `<Modal>`，跟 SPARKPLATE 做法一致；移除未使用的 `Modal` import
+  - 修復後不重開 App，重新走一次「設定 → 匯入 → 關閉面板 → 點開始使用」確認按鈕恢復正常
+  - sqlite3 直接查容器內 sparkshape.db 確認匯入前後資料一致、無遺失
+- 執行過的驗證：模擬器手動操作＋sqlite3 直接查詢資料庫內容＋Metro log 檢查＋`pnpm test`（17 passed）＋`pnpm typecheck`（無新增錯誤）
+- 已擷取證據：見 feature_list.json ios-003 evidence；截圖 docs/ios-003-import-fixed.png
+- 提交記錄：（見本輪 commit）
+- 已知風險或未解決問題：SPARKFIT/SPARKNOTE 是否有同樣的「設定面板 Modal + 內部呼叫 DocumentPicker/Sharing」模式尚未檢查，值得之後順手排查
+- 下一步最佳動作：開始 native-001（可直接複製 SPARKPLATE 的 RCTBridge plugin，另外還要處理 fmt 的 Podfile post_install 修復）
 
 ### 工作階段 002
 

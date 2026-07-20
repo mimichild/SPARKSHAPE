@@ -59,13 +59,22 @@
       "area": "ios",
       "title": "模擬器驗證 ZIP 匯出/匯入",
       "user_visible_behavior": "使用者在 iOS 上能匯出 ZIP 備份並成功匯入還原。",
-      "status": "not_started",
+      "status": "passing",
       "verification": [
         "建立測試資料後執行匯出，確認 ZIP 產生且分享面板出現。",
-        "清空資料後匯入，確認資料與照片完整還原。"
+        "清空資料後匯入，確認資料與照片完整還原。",
+        "匯入完成、關閉設定面板後，確認畫面（含首頁按鈕）仍可正常點擊、不卡死。"
       ],
-      "evidence": [],
-      "notes": ""
+      "evidence": [
+        "2026-07-20 | 使用者手動操作：設定 → 匯出備份 | 分享面板正常出現，ZIP 產生",
+        "2026-07-20 | 使用者手動操作：設定 → 匯入（選剛匯出的 ZIP）| 匯入成功，但關閉設定面板後首頁「開始使用」按鈕完全無法點擊——發現一個真實 bug",
+        "2026-07-20 | 程式碼比對：SettingsSheet.tsx 用 <Modal> 包住整個設定面板，內部匯出/匯入又會呼叫 DocumentPicker/Sharing（也是原生 Modal），這正是 SPARKPLATE 的 BackupRestoreModal.tsx 註解裡已經記錄過的「iOS 巢狀開多層原生 Modal 會讓畫面卡死不回應」問題，SPARKSHAPE 沒有跟著套用同樣的修法",
+        "2026-07-20 | 修復：SettingsSheet.tsx 改用絕對定位 View 取代 <Modal>（做法與 SPARKPLATE 一致），移除未使用的 Modal import | pnpm test 17 passed、pnpm typecheck 無新增錯誤",
+        "2026-07-20 | 修復後重新走一次「設定 → 匯入 → 關閉面板 → 點開始使用」完整流程（不重開 App）| 使用者確認按鈕恢復正常可點擊",
+        "2026-07-20 | sqlite3 直接查容器內 sparkshape.db（含 -wal/-shm）| body_photos 表共 6 筆記錄，匯入前後資料一致，無遺失",
+        "2026-07-20 | 截圖 docs/ios-003-import-fixed.png | 修復後畫面正常"
+      ],
+      "notes": "順帶發現並修好一個跟本項驗證直接相關的既有 bug（設定面板巢狀 Modal 導致匯入後畫面卡死），不是原本 checklist 要求但屬於同一個使用者流程，故一併記錄在此。"
     },
     {
       "id": "native-001",
