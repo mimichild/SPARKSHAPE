@@ -82,15 +82,23 @@
       "area": "native",
       "title": "把 fmt/RCTBridge 原生修復轉成 Expo config plugin",
       "user_visible_behavior": "expo prebuild --clean 或 EAS 雲端建置重新產生 ios/ 後，不需手動修改也能編譯成功。",
-      "status": "not_started",
+      "status": "passing",
       "verification": [
         "依記憶/文件把兩個修復寫成 config plugin：(1) Podfile post_install 將 fmt 的 CLANG_CXX_LANGUAGE_STANDARD 降為 gnu++17 並設 ios.buildReactNativeFromSource=true；(2) AppDelegate.swift 移除 sourceURL(for bridge:) override。",
         "備份本機 ios/ 後執行 npx expo prebuild --clean。",
         "確認重新產生的 ios/ 含有修復內容。",
         "執行 npx expo run:ios 確認建置成功。"
       ],
-      "evidence": [],
-      "notes": "ios-004（EAS 建置）的硬前置。修復細節見使用者記憶 project_sparkshape_ios_native_fixes 與 2026-07-17 session。"
+      "evidence": [
+        "2026-07-20 | cp -R ios ~/scratchpad/sparkshape-ios-backup | 備份完成",
+        "2026-07-20 | npx expo install expo-build-properties | 解析出 SDK 54 相容版本 ~1.0.10，並自動在 app.json 註冊 expo-build-properties plugin；補上 ios.buildReactNativeFromSource: true 設定",
+        "2026-07-20 | 新增 plugins/withFmtConstevalFix.js（用 withPodfile mod）與複製 plugins/withRemoveRCTBridgeSourceURL.js（來自 SPARKPLATE） | 兩個 plugin 都在 app.json plugins 陣列註冊",
+        "2026-07-20 | npx expo prebuild --clean --platform ios → npx expo run:ios（第一次）| 建置失敗，fmt consteval 錯誤重現，原因是 fmt fix 插在 react_native_post_install(...) 呼叫之前，被它蓋掉；修正 plugin 讓 fmt fix 插在該呼叫之後（跟原本手動修復的順序一致）",
+        "2026-07-20 | npx expo prebuild --clean --platform ios → npx expo run:ios（修正後）| Build Succeeded，0 error(s)；確認 ios/Podfile 的 fmt fix 位置正確、ios/Podfile.properties.json 含 ios.buildReactNativeFromSource: true、ios/SPARKSHAPE/AppDelegate.swift 的 sourceURL(for bridge:) 已移除",
+        "2026-07-20 | 模擬器截圖 docs/native-001-prebuild-clean-success.png | 首頁正常渲染，無紅屏",
+        "2026-07-20 | ./init.sh | 17 tests passed"
+      ],
+      "notes": "ios-004（EAS 建置）的硬前置，已完成。plugin 檔案：plugins/withFmtConstevalFix.js、plugins/withRemoveRCTBridgeSourceURL.js（後者複製自 SPARKPLATE，寫法通用）。重要教訓：用 withPodfile 修改 post_install 時，插入點必須在 react_native_post_install(...) 呼叫「之後」，插在前面會被它蓋掉。"
     },
     {
       "id": "ios-004",
@@ -98,14 +106,14 @@
       "area": "ios",
       "title": "EAS iOS 雲端建置成功",
       "user_visible_behavior": "EAS Build 產出可安裝的 iOS build。",
-      "status": "not_started",
+      "status": "blocked",
       "verification": [
         "確認 Apple Developer 帳號可用、建立 eas.json（可參考 SPARKWEAR 的當範本）。",
         "執行 eas build --platform ios。",
         "確認 expo.dev 建置狀態 finished，記錄 build URL。"
       ],
       "evidence": [],
-      "notes": "前置：Apple Developer Program（申請中則標 blocked）＋ native-001 必須先完成。本專案目前沒有 eas.json。"
+      "notes": "2026-07-20 blocked：native-001 已完成，唯一前置條件剩 Apple Developer Program（$99/年）尚未申請，需使用者決定是否付費申請。已嘗試：無需嘗試，純屬外部帳號申請前置。建議解法：使用者申請 Apple Developer Program 後再回來繼續；帳號未辦好前不要空等此項。本專案目前沒有 eas.json，需在申請帳號後一併建立（可參考 SPARKWEAR 的當範本）。"
     },
     {
       "id": "ios-005",

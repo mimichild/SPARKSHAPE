@@ -9,11 +9,28 @@
 - 儲存庫根目錄：/Users/mimi/Documents/SPARKSHAPE
 - 標準啟動路徑：`RUN_START_COMMAND=1 ./init.sh`（實際指令見 init.sh 的 START_CMD）
 - 標準驗證路徑：./init.sh（pnpm install + pnpm test；2026-07-17 為 17 tests passed）
-- 目前最高優先級未完成功能：native-001（把 fmt/RCTBridge 原生修復轉成 Expo config plugin）
-- 目前 blocker：無
-- 背景：ios-001～ios-003 皆已 passing；fmt/RCTBridge 原生修復目前還只在被 gitignore 的本機 ios/（勿跑 expo prebuild --clean，會清掉）；EAS 前必須完成 native-001 config plugin（SPARKPLATE 已有 RCTBridge 部分的現成寫法可參考複製，見 SPARKPLATE/plugins/withRemoveRCTBridgeSourceURL.js，但 SPARKSHAPE 還多一個 fmt Podfile post_install 修復要處理）
+- 目前最高優先級未完成功能：ios-004 EAS iOS 雲端建置成功（blocked：需先申請 Apple Developer Program 帳號）
+- 目前 blocker：ios-004/ios-005 需要 Apple Developer Program（$99/年），尚未申請
+- 背景：ios-001～ios-003、native-001 皆已 passing；fmt/RCTBridge 兩個原生修復已轉成 config plugin（plugins/withFmtConstevalFix.js、plugins/withRemoveRCTBridgeSourceURL.js），expo prebuild --clean 不再需要手動改 ios/
 
 ## 工作階段日誌
+
+### 工作階段 004
+
+- 日期：2026-07-20
+- 本輪目標：完成 native-001（把 fmt/RCTBridge 原生修復轉成 Expo config plugin）
+- 已完成：
+  - 備份本機 `ios/`
+  - 用 `npx expo install expo-build-properties` 裝上官方 plugin，設定 `ios.buildReactNativeFromSource: true`（取代手動改 Podfile.properties.json）
+  - 複製 SPARKPLATE 的 `plugins/withRemoveRCTBridgeSourceURL.js` 處理 RCTBridge 問題
+  - 新寫 `plugins/withFmtConstevalFix.js`（用 `withPodfile` mod）處理 fmt consteval 編譯錯誤
+  - **踩坑**：第一版把 fmt 修復插在 `react_native_post_install(...)` 呼叫「之前」，導致設定被它蓋掉、建置仍然失敗，錯誤訊息跟修復前一模一樣；改成插在該呼叫「之後」（跟原本手動修復的順序一致）就成功了——這是用 config plugin 改 Podfile 時務必注意的順序陷阱
+  - 修正後 `prebuild --clean` + 建置成功，確認三個修復（fmt、buildReactNativeFromSource、RCTBridge）都正確出現在重新產生的 `ios/`
+- 執行過的驗證：模擬器實測建置（第一次失敗重現錯誤、修正後成功）、`./init.sh`（17 tests passed）
+- 已擷取證據：見 feature_list.json native-001 evidence；截圖 docs/native-001-prebuild-clean-success.png
+- 提交記錄：（見本輪 commit）
+- 已知風險或未解決問題：ios-004/ios-005 仍卡在 Apple Developer 帳號
+- 下一步最佳動作：等使用者申請好 Apple Developer Program 後才能繼續 ios-004；在那之前可以考慮開始 SPARKFIT/SPARKNOTE 的 Phase B 模擬器驗證
 
 ### 工作階段 003
 

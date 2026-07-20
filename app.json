@@ -20,7 +20,10 @@
         "NSCameraUsageDescription": "SPARKSHAPE needs camera access to take body photos",
         "NSPhotoLibraryUsageDescription": "SPARKSHAPE needs photo library access to upload body photos",
         "NSPhotoLibraryAddUsageDescription": "SPARKSHAPE needs permission to save photos to your library",
-        "LSApplicationQueriesSchemes": ["sparkplate", "sparkfit"],
+        "LSApplicationQueriesSchemes": [
+          "sparkplate",
+          "sparkfit"
+        ],
         "UIFileSharingEnabled": true,
         "LSSupportsOpeningDocumentsInPlace": true
       }
@@ -59,7 +62,17 @@
           "photosPermission": "SPARKSHAPE needs permission to access your photos",
           "savePhotosPermission": "SPARKSHAPE needs permission to save photos to your library"
         }
-      ]
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "buildReactNativeFromSource": true
+          }
+        }
+      ],
+      "./plugins/withFmtConstevalFix.js",
+      "./plugins/withRemoveRCTBridgeSourceURL.js"
     ],
     "experiments": {
       "typedRoutes": true
