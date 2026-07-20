@@ -21,13 +21,16 @@
       "area": "ios",
       "title": "iOS 模擬器啟動 App 並截圖存證",
       "user_visible_behavior": "在 iOS 模擬器上可以看到 SPARKSHAPE 啟動並顯示首頁。",
-      "status": "not_started",
+      "status": "passing",
       "verification": [
         "執行 npx expo run:ios（或 pnpm ios）。",
         "確認建置成功且模擬器開啟 App、首頁正常渲染無紅屏。",
         "擷取模擬器截圖存入 docs/ 作為證據。"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-07-20 | npx expo run:ios | Build Succeeded，0 error(s)，安裝並開啟於 iPhone 17 Pro 模擬器",
+        "2026-07-20 | xcrun simctl io booted screenshot docs/ios-001-simulator-home.png | 首頁正常顯示「SPARK SHAPE」標題與開始使用按鈕，無紅屏錯誤"
+      ],
       "notes": "2026-07-17 已成功 build 過一次（fmt/RCTBridge 修復存在被 gitignore 的本機 ios/，勿跑 expo prebuild --clean 以免清掉修復）。本項應可快速通過，但仍需實跑並留證據。"
     },
     {
@@ -36,13 +39,18 @@
       "area": "ios",
       "title": "模擬器驗證核心流程：資料庫讀寫與相機/相簿權限",
       "user_visible_behavior": "使用者在 iOS 模擬器上能完成核心操作、看到權限彈窗、重啟後資料仍在。",
-      "status": "not_started",
+      "status": "passing",
       "verification": [
         "在模擬器完成一次核心新增操作（含從相簿選照片）。",
         "確認相簿/相機權限彈窗出現且允許後功能正常。",
         "完全關閉 App 再重開，確認資料仍存在（expo-sqlite 持久化）。"
       ],
-      "evidence": [],
+      "evidence": [
+        "2026-07-20 | 使用者手動操作：新增正面照/側面照身型紀錄 | 點「拍攝正面照」時模擬器丟出預期中的 'Camera not available on simulator'（模擬器無實體相機，屬預期行為，非閃退），改用相簿選圖後正常進入「調整正面照」畫面（亮度/對比調整），確認存檔成功",
+        "2026-07-20 | sqlite3 直接查容器內 sparkshape.db（含 -wal/-shm）| body_photos 表新增 2 筆記錄（front/side），photo_path 指向當下容器內實際存在的照片檔案（thumb/grid/detail/full 四種尺寸皆存在）",
+        "2026-07-20 | xcrun simctl terminate + launch 後再次 sqlite3 查詢 | 2 筆新記錄皆仍存在，資料持久化正常",
+        "2026-07-20 | xcrun simctl io booted screenshot docs/ios-002-body-photo.png | 畫面截圖存證"
+      ],
       "notes": "模擬器無實體相機，拍照僅驗證權限與不閃退；完整拍照留到實機。"
     },
     {
