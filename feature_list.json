@@ -106,14 +106,17 @@
       "area": "ios",
       "title": "EAS iOS 雲端建置成功",
       "user_visible_behavior": "EAS Build 產出可安裝的 iOS build。",
-      "status": "blocked",
+      "status": "passing",
       "verification": [
         "確認 Apple Developer 帳號可用、建立 eas.json（可參考 SPARKWEAR 的當範本）。",
         "執行 eas build --platform ios。",
         "確認 expo.dev 建置狀態 finished，記錄 build URL。"
       ],
-      "evidence": [],
-      "notes": "2026-07-20 blocked：native-001 已完成，唯一前置條件剩 Apple Developer Program（$99/年）尚未申請，需使用者決定是否付費申請。已嘗試：無需嘗試，純屬外部帳號申請前置。建議解法：使用者申請 Apple Developer Program 後再回來繼續；帳號未辦好前不要空等此項。本專案目前沒有 eas.json，需在申請帳號後一併建立（可參考 SPARKWEAR 的當範本）。"
+      "evidence": [
+        "2026-07-20 | 新增 eas.json（參考 SPARKWEAR 範本，含 Node 22.13.0 修法）| npx eas-cli init 建立 EAS 專案 @mimichild/sparkshape，projectId 505fd0e2-92c3-42c6-b702-43eab85484aa",
+        "2026-07-20 | npx eas-cli build --platform ios --profile production（互動模式，使用者本人建立 Provisioning Profile）| Build finished，產出 .ipa：https://expo.dev/artifacts/eas/SBfniOpjCk-60CRMcAr18ldPmXxnguDD0D0lkwpVrsc.ipa；建置頁：https://expo.dev/accounts/mimichild/projects/sparkshape/builds/a71afc9e-486b-4894-b9eb-a1a80e939471；一次就成功，驗證了 native-001 的兩個 config plugin（fmt/RCTBridge）在雲端建置環境下都有效"
+      ],
+      "notes": "native-001 的兩個 config plugin 在雲端建置環境下驗證有效。"
     },
     {
       "id": "ios-005",

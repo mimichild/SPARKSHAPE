@@ -22,10 +22,13 @@
         "NSPhotoLibraryAddUsageDescription": "SPARKSHAPE needs permission to save photos to your library",
         "LSApplicationQueriesSchemes": [
           "sparkplate",
+          "sparkfit",
+          "sparkplate",
           "sparkfit"
         ],
         "UIFileSharingEnabled": true,
-        "LSSupportsOpeningDocumentsInPlace": true
+        "LSSupportsOpeningDocumentsInPlace": true,
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -38,7 +41,9 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_MEDIA_IMAGES",
-        "android.permission.WRITE_EXTERNAL_STORAGE"
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE"
       ]
     },
     "plugins": [
@@ -79,6 +84,13 @@
     },
     "web": {
       "bundler": "metro"
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "505fd0e2-92c3-42c6-b702-43eab85484aa"
+      }
+    },
+    "owner": "mimichild"
   }
 }
