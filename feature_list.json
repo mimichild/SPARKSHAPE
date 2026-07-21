@@ -135,6 +135,19 @@
         "2026-07-21 | 使用者手動操作：核心流程（含相機拍照 CameraSheet、相簿選圖、關閉重開確認資料持久化）| 使用者確認「功能都測試過，沒有問題」"
       ],
       "notes": "依賴 ios-004。"
+    },
+    {
+      "id": "ios-006",
+      "priority": 7,
+      "area": "icon",
+      "title": "App icon 圓形外四角有菱格紋殘留",
+      "user_visible_behavior": "使用者在 iPhone 桌面看 SPARKSHAPE icon，圓形圖案外側的四個角落（方形圓角圖示的角落區域）出現灰白菱格紋，不是預期的純色背景。",
+      "status": "not_started",
+      "verification": [
+        "TBD：規劃時再補齊具體驗證步驟。"
+      ],
+      "evidence": [],
+      "notes": "2026-07-21 使用者實機在 TestFlight 桌面圖示上發現。查證 assets/images/icon.png：png:IHDR.color_type=2（Truecolor，無 alpha 通道），用 ImageMagick 裁切左上角像素確認圓形外的角落區域本身就是烙進圖檔的灰白菱格紋（非透明度顯示問題）。exif:Software 顯示曾用 Picasa 編輯，推測是設計軟體匯出時沒把代表透明背景的棋盤格提示圖案壓平成純色就直接存檔。修法：重新匯出這張 icon，圓形外的角落區域填滿純色（白色或跟其他 App 一致的底色），不要留有透明度指示圖案。使用者確認之後再處理，先記錄避免遺忘。"
     }
   ]
 }
