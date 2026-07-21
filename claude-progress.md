@@ -9,11 +9,24 @@
 - 儲存庫根目錄：/Users/mimi/Documents/SPARKSHAPE
 - 標準啟動路徑：`RUN_START_COMMAND=1 ./init.sh`（實際指令見 init.sh 的 START_CMD）
 - 標準驗證路徑：./init.sh（pnpm install + pnpm test；2026-07-17 為 17 tests passed）
-- 目前最高優先級未完成功能：ios-005 TestFlight 內部測試（in_progress，已完成 eas submit，剩下加入測試群組＋實機驗證）
-- 目前 blocker：實機驗證步驟需要使用者的實體 iPhone 才能繼續
-- 背景：Apple Developer Program 已生效（2026-07-20）；ios-001～ios-004、native-001 皆已 passing，EAS 雲端建置成功產出 .ipa，也驗證了兩個 config plugin（fmt/RCTBridge）在雲端環境確實有效
+- 目前最高優先級未完成功能：無（feature_list.json 目前全部 passing）
+- 目前 blocker：無
+- 背景：Apple Developer Program 已生效（2026-07-20）；ios-001～ios-005、native-001 皆已 passing（含 TestFlight 實機驗證），EAS 雲端建置成功產出 .ipa，也驗證了兩個 config plugin（fmt/RCTBridge）在雲端環境確實有效；實機測試核心流程（相機拍照/相簿選圖/資料持久化）皆無問題
 
 ## 工作階段日誌
+
+### 工作階段 007
+
+- 日期：2026-07-21
+- 本輪目標：完成 ios-005（TestFlight 內部測試）剩餘步驟——加入測試群組＋實機驗證
+- 已完成：
+  - 使用者於 App Store Connect 把 Build 1 加入內部測試群組，iPhone 用 TestFlight 成功安裝並開啟 SPARKSHAPE
+  - 實機重跑核心流程（相機拍照 CameraSheet、相簿選圖、關閉重開確認資料持久化），使用者確認「功能都測試過，沒有問題」
+- 執行過的驗證：見上述，皆為使用者實機手動操作
+- 已擷取證據：見 feature_list.json ios-005 evidence
+- 提交記錄：（本輪 commit）
+- 已知風險或未解決問題：無
+- 下一步最佳動作：目前 feature_list.json 全部 passing，無待辦項目；有新需求再開新 feature
 
 ### 工作階段 006
 

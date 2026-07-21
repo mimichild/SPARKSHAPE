@@ -124,15 +124,17 @@
       "area": "ios",
       "title": "TestFlight 內部測試",
       "user_visible_behavior": "使用者的 iPhone 能從 TestFlight 安裝並正常使用核心功能。",
-      "status": "in_progress",
+      "status": "passing",
       "verification": [
         "eas submit --platform ios 並在 App Store Connect 加入內部測試群組。",
         "實機安裝啟動，重跑 ios-002 核心流程（含真實相機）。"
       ],
       "evidence": [
-        "2026-07-21 | eas submit --platform ios --profile production --latest（使用者本人於 Terminal.app 互動執行）| Submission 成功，Build ID a71afc9e-486b-4894-9eb-a1a80e939471（App Version 1.0.0, Build 1）已上傳，https://appstoreconnect.apple.com/apps/6793041558/testflight/ios"
+        "2026-07-21 | eas submit --platform ios --profile production --latest（使用者本人於 Terminal.app 互動執行）| Submission 成功，Build ID a71afc9e-486b-4894-9eb-a1a80e939471（App Version 1.0.0, Build 1）已上傳，https://appstoreconnect.apple.com/apps/6793041558/testflight/ios",
+        "2026-07-21 | 使用者本人於 App Store Connect 將 Build 1 加入內部測試群組，iPhone 上安裝 TestFlight 並成功安裝、開啟 SPARKSHAPE | 啟動正常無閃退",
+        "2026-07-21 | 使用者手動操作：核心流程（含相機拍照 CameraSheet、相簿選圖、關閉重開確認資料持久化）| 使用者確認「功能都測試過，沒有問題」"
       ],
-      "notes": "依賴 ios-004。2026-07-21：已完成 eas submit，剩下加入內部測試群組＋實機驗證需等使用者有 iPhone 可測時才能做。"
+      "notes": "依賴 ios-004。"
     }
   ]
 }
