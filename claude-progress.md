@@ -9,11 +9,22 @@
 - 儲存庫根目錄：/Users/mimi/Documents/SPARKSHAPE
 - 標準啟動路徑：`RUN_START_COMMAND=1 ./init.sh`（實際指令見 init.sh 的 START_CMD）
 - 標準驗證路徑：./init.sh（pnpm install + pnpm test；2026-07-17 為 17 tests passed）
-- 目前最高優先級未完成功能：ios-005 TestFlight 內部測試
-- 目前 blocker：無
+- 目前最高優先級未完成功能：ios-005 TestFlight 內部測試（in_progress，已完成 eas submit，剩下加入測試群組＋實機驗證）
+- 目前 blocker：實機驗證步驟需要使用者的實體 iPhone 才能繼續
 - 背景：Apple Developer Program 已生效（2026-07-20）；ios-001～ios-004、native-001 皆已 passing，EAS 雲端建置成功產出 .ipa，也驗證了兩個 config plugin（fmt/RCTBridge）在雲端環境確實有效
 
 ## 工作階段日誌
+
+### 工作階段 006
+
+- 日期：2026-07-21
+- 本輪目標：ios-005 中不需要實機的部分先做完（eas submit）
+- 已完成：使用者於 Terminal.app 互動執行 `eas submit --platform ios --profile production --latest`，Build a71afc9e-486b-4894-9eb-a1a80e939471 上傳成功
+- 執行過的驗證：實際跑 eas submit，看到「Submitted your app to Apple App Store Connect!」完成訊息
+- 已擷取證據：見 feature_list.json ios-005 evidence
+- 提交記錄：76434b8
+- 已知風險或未解決問題：ios-005 剩餘兩步需要使用者的實體 iPhone
+- 下一步最佳動作：等使用者有 iPhone 可測時，完成 ios-005 剩餘步驟
 
 ### 工作階段 005
 
