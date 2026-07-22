@@ -8,12 +8,28 @@
 
 - 儲存庫根目錄：/Users/mimi/Documents/SPARKSHAPE
 - 標準啟動路徑：`RUN_START_COMMAND=1 ./init.sh`（實際指令見 init.sh 的 START_CMD）
-- 標準驗證路徑：./init.sh（pnpm install + pnpm test；2026-07-17 為 17 tests passed）
+- 標準驗證路徑：./init.sh（pnpm install + pnpm test；2026-07-22 為 17 tests passed）
 - 目前最高優先級未完成功能：無（feature_list.json 目前全部 passing）
 - 目前 blocker：無
-- 背景：Apple Developer Program 已生效（2026-07-20）；ios-001～ios-005、native-001 皆已 passing（含 TestFlight 實機驗證），EAS 雲端建置成功產出 .ipa，也驗證了兩個 config plugin（fmt/RCTBridge）在雲端環境確實有效；實機測試核心流程（相機拍照/相簿選圖/資料持久化）皆無問題
+- 背景：Apple Developer Program 已生效（2026-07-20）；ios-001～ios-006、native-001 皆已 passing（含 TestFlight 實機驗證），EAS 雲端建置成功產出 .ipa，也驗證了兩個 config plugin（fmt/RCTBridge）在雲端環境確實有效；實機測試核心流程（相機拍照/相簿選圖/資料持久化）皆無問題；App icon 圓形外菱格紋殘留問題已修好（同時解決 iOS 與 Android，因為兩邊共用同一張來源圖）
 
 ## 工作階段日誌
+
+### 工作階段 008
+
+- 日期：2026-07-22
+- 本輪目標：修 ios-006（App icon 圓形外菱格紋殘留）
+- 已完成：
+  - 用 ImageMagick 分析發現實際範圍比原本以為的更大：不只角落，整個圓形外的背景都是灰白棋盤格，烙進 `assets/images/icon.png` 的真實像素（無 alpha 通道）
+  - 嘗試單純用 `-opaque` 配 fuzz 比對單一灰色替換行不通：fuzz 不夠會殘留棋盤格邊緣，fuzz 太多會連粉紅圓形本體一起被洗掉，兩者安全區間沒有交集
+  - 改用色彩飽和度判斷解法：`magick icon.png -fx "(abs(r-g)<0.05)&&(abs(g-b)<0.05)&&(abs(r-b)<0.05) ? 1 : u"`（無色彩/接近灰階的像素一律轉純白，其餘保留原色），完美清除棋盤格且完全不影響粉紅圓形與白色剪影
+  - `npx expo prebuild --platform ios` 重新產生資源，確認 `Images.xcassets/AppIcon.appiconset` 裡的圖已經是修好的版本
+  - 同一張 `icon.png` 也是 app.json 裡 Android `adaptiveIcon.foregroundImage`，這次修復對 Android 版一併有效
+- 執行過的驗證：`./init.sh`（17 tests passed）、ImageMagick 像素級檢查（角落、圓形邊緣裁切放大比對）、prebuild 產出檔案比對
+- 已擷取證據：見 feature_list.json ios-006 evidence
+- 提交記錄：（本輪 commit）
+- 已知風險或未解決問題：無
+- 下一步最佳動作：feature_list.json 目前全部 passing，無待辦項目
 
 ### 工作階段 007
 
