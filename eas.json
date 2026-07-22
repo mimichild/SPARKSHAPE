@@ -36,7 +36,8 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "kyoangel.tw@gmail.com"
+        "appleId": "kyoangel.tw@gmail.com",
+        "ascAppId": "6793041558"
       }
     }
   }
