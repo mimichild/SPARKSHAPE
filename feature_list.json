@@ -153,7 +153,8 @@
         "2026-07-22 | 嘗試 -opaque 直接替換單一灰色（10~20% fuzz）| 10% 殘留棋盤格邊緣雜訊，15%+ 開始連粉紅圓形本體都被誤判成同色系一起洗掉，找不到一個安全的單一 fuzz 值",
         "2026-07-22 | 改用色彩飽和度判斷：magick icon.png -fx \"(abs(r-g)<0.05)&&(abs(g-b)<0.05)&&(abs(r-b)<0.05) ? 1 : u\"（無色彩/接近灰階的像素強制轉純白，其餘保留原色）| 背景棋盤格完全清除成純白，粉紅圓形與白色剪影完全不受影響，裁切放大角落與圓形邊緣檢查皆乾淨",
         "2026-07-22 | npx expo prebuild --platform ios | 成功重新產生 ios/SPARKSHAPE/Images.xcassets/AppIcon.appiconset/App-Icon-1024x1024@1x.png，確認新產生的檔案已是修好的版本",
-        "2026-07-22 | ./init.sh | 17 tests passed"
+        "2026-07-22 | ./init.sh | 17 tests passed",
+        "2026-07-22 | eas.json 補上 ascAppId，eas build + eas submit（Build 2）→ App Store Connect 加入內部測試群組 → iPhone TestFlight 安裝 | 使用者實機確認「現在看起來都正常了」"
       ],
       "notes": "2026-07-21 使用者實機在 TestFlight 桌面圖示上發現。exif:Software 顯示曾用 Picasa 編輯，推測是設計軟體匯出時沒把代表透明背景的棋盤格提示圖案壓平成純色就直接存檔。2026-07-22 修好：實際範圍比原本以為的「只有角落」大，整個圓形外的背景都是棋盤格。單純用 -opaque 配 fuzz 比對單一顏色行不通（fuzz 不夠會殘留、fuzz 太多會連粉紅圓形一起洗掉，兩者的安全區間互相重疊沒有交集），改用色彩飽和度判斷（無色彩的灰階像素一律轉純白，其餘保留）才乾淨解決，且不受棋盤格灰階雜訊變動影響。同一張 icon.png 也是 app.json 裡 Android adaptiveIcon 的 foregroundImage，這次修復對 Android 版也一併有效（原本沒發現 Android 端有沒有同樣問題，這次順便解決）。沒有另外處理的殘留風險：圖檔本身仍是不透明 RGB（無 alpha），跟改動前一致，不影響 Android adaptive icon 遮罩行為。"
     }

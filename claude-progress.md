@@ -11,9 +11,23 @@
 - 標準驗證路徑：./init.sh（pnpm install + pnpm test；2026-07-22 為 17 tests passed）
 - 目前最高優先級未完成功能：無（feature_list.json 目前全部 passing）
 - 目前 blocker：無
-- 背景：Apple Developer Program 已生效（2026-07-20）；ios-001～ios-006、native-001 皆已 passing（含 TestFlight 實機驗證），EAS 雲端建置成功產出 .ipa，也驗證了兩個 config plugin（fmt/RCTBridge）在雲端環境確實有效；實機測試核心流程（相機拍照/相簿選圖/資料持久化）皆無問題；App icon 圓形外菱格紋殘留問題已修好（同時解決 iOS 與 Android，因為兩邊共用同一張來源圖）
+- 背景：Apple Developer Program 已生效（2026-07-20）；ios-001～ios-006、native-001 皆已 passing（含 TestFlight 實機驗證），EAS 雲端建置成功產出 .ipa，也驗證了兩個 config plugin（fmt/RCTBridge）在雲端環境確實有效；實機測試核心流程（相機拍照/相簿選圖/資料持久化）皆無問題；App icon 圓形外菱格紋殘留問題已修好並實機確認（同時解決 iOS 與 Android，因為兩邊共用同一張來源圖）；已設定 EAS Update（OTA）支援與 eas.json ascAppId（submit 可完全非互動執行）
 
 ## 工作階段日誌
+
+### 工作階段 009
+
+- 日期：2026-07-22
+- 本輪目標：把 ios-006 icon 修復實際出貨到 TestFlight 並實機確認
+- 已完成：
+  - 設定 EAS Update（OTA）支援；eas.json 加 `ascAppId` 讓 submit 完全非互動
+  - `eas build` + `eas submit`（Build 2，含 icon 修復）→ 使用者在 App Store Connect 加入測試群組 → iPhone TestFlight 安裝
+  - 使用者實機確認「現在看起來都正常了」，icon 菱格紋問題確認解決
+- 執行過的驗證：`./init.sh`（17 tests passed）、實機 TestFlight 圖示確認
+- 已擷取證據：見 feature_list.json ios-006 evidence
+- 提交記錄：（本輪 commit）
+- 已知風險或未解決問題：無
+- 下一步最佳動作：feature_list.json 全部 passing，無待辦項目
 
 ### 工作階段 008
 
