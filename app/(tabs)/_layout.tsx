@@ -1,5 +1,6 @@
-import { View } from 'react-native';
+import { View, TouchableOpacity, Text } from 'react-native';
 import { Tabs } from 'expo-router';
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 import { useSettingsStore } from '@/stores/settingsStore';
@@ -7,30 +8,50 @@ import { AdBanner } from '@/components/AdBanner';
 
 type IoniconsName = ComponentProps<typeof Ionicons>['name'];
 
-export default function TabLayout() {
+const TAB_BAR_HEIGHT = 48;
+
+// 自訂 tabBar：react-navigation 的 tabBarStyle.height 在這個專案裡不會被完全遵守
+// （量測發現實際渲染仍會多墊出安全區高度），改用完全自繪的列來鎖死固定高度。
+function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const themeColor = useSettingsStore((s) => s.themeColor);
 
   return (
+    <View style={{ flexDirection: 'row', height: TAB_BAR_HEIGHT, backgroundColor: themeColor }}>
+      {state.routes.map((route, index) => {
+        const { options } = descriptors[route.key];
+        const isFocused = state.index === index;
+        const tintColor = isFocused ? '#FFFFFF' : 'rgba(255,255,255,0.5)';
+        const label = typeof options.title === 'string' ? options.title : route.name;
+
+        const onPress = () => {
+          const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+          if (!isFocused && !event.defaultPrevented) navigation.navigate(route.name);
+        };
+
+        return (
+          <TouchableOpacity
+            key={route.key}
+            onPress={onPress}
+            activeOpacity={0.7}
+            style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
+          >
+            {options.tabBarIcon?.({ focused: isFocused, color: tintColor, size: 20 })}
+            <Text style={{ fontSize: 10, fontWeight: '600', marginTop: 2, color: tintColor }}>
+              {label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
+export default function TabLayout() {
+  return (
     <View style={{ flex: 1 }}>
       <Tabs
+        tabBar={(props) => <CustomTabBar {...props} />}
         screenOptions={{
-          tabBarActiveTintColor: '#FFFFFF',
-          tabBarInactiveTintColor: 'rgba(255,255,255,0.5)',
-          // 分頁列下方接了 AdBanner，不是螢幕最底部，所以固定高度不用另外加安全區。
-          tabBarStyle: {
-            backgroundColor: themeColor,
-            borderTopWidth: 0,
-            borderTopColor: 'transparent',
-            elevation: 0,       // 消除 Android shadow（灰線來源）
-            shadowOpacity: 0,   // 消除 iOS shadow
-            height: 56,
-            paddingBottom: 0,
-            paddingTop: 4,
-          },
-          tabBarLabelStyle: {
-            fontSize: 11,
-            fontWeight: '600',
-          },
           headerShown: false,
         }}
       >

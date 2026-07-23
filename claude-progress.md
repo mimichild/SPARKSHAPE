@@ -9,11 +9,29 @@
 - 儲存庫根目錄：/Users/mimi/Documents/SPARKSHAPE
 - 標準啟動路徑：`RUN_START_COMMAND=1 ./init.sh`（實際指令見 init.sh 的 START_CMD）
 - 標準驗證路徑：./init.sh（pnpm install + pnpm test；2026-07-23 為 34 tests passed）
-- 目前最高優先級未完成功能：monetization-001（in_progress）——AdMob＋RevenueCat＋Pro 功能鎖，複製自 SPARKWEAR/SPARKPLATE 範本；build/tsc/單元測試都過，模擬器上確認過主流程，個別鎖點還沒逐一手動點過，待使用者測一輪
+- monetization-001：passing（2026-07-23，使用者實機逐一測試個別鎖點確認無誤）；已移除首頁互連連結（SPARK FIT/PLATE），並修好三個分頁的分頁列高度（見工作階段 011）
+- 目前最高優先級未完成功能：無（feature_list.json 內下一個 not_started 功能待下輪選取）
 - 目前 blocker：無
 - 背景：Apple Developer Program 已生效（2026-07-20）；ios-001～ios-006、native-001 皆已 passing（含 TestFlight 實機驗證），EAS 雲端建置成功產出 .ipa，也驗證了兩個 config plugin（fmt/RCTBridge）在雲端環境確實有效；實機測試核心流程（相機拍照/相簿選圖/資料持久化）皆無問題；App icon 圓形外菱格紋殘留問題已修好並實機確認（同時解決 iOS 與 Android，因為兩邊共用同一張來源圖）；已設定 EAS Update（OTA）支援與 eas.json ascAppId（submit 可完全非互動執行）
 
 ## 工作階段日誌
+
+### 工作階段 011
+
+- 日期：2026-07-23
+- 本輪目標：UI 微調——移除首頁互連連結、修分頁列高度過高的問題
+- 已完成：
+  - `app/index.tsx` 移除跳轉到 SPARK FIT / SPARK PLATE 的互連連結區塊（連同 `openApp()`、`APP_DOWNLOAD_URLS`、相關 style）
+  - 分頁列高度問題：原本猜是 `tabBarStyle.height` 沒被 react-navigation 完全遵守，試了兩輪調整都沒用（甚至使用者回報「變得更高了」）。改用像素量測screenshot（PIL 抓 pink 色塊邊界）才找到真正原因：**不是 tabBarStyle 的問題**，是三個分頁畫面（`current.tsx`/`wall.tsx`/`comparison.tsx`）各自的 `<SafeAreaView>` 沒有限制 `edges`，預設會把底部安全區（~34pt）當成 padding 保留，且背景色跟分頁列同樣是 `themeColor`（粉色），視覺上跟分頁列的粉色融成一塊，才會看起來「還是很高」。量測結果：34pt（畫面自己多墊的安全區）＋分頁列本身高度＝視覺上的總高度。
+  - 修法：三個分頁畫面的 SafeAreaView 都加上 `edges={['top','left','right']}`（排除 bottom，因為真正的畫面底部是 AdBanner，不需要再留安全區）；順便把 `app/(tabs)/_layout.tsx` 的分頁列從「用 tabBarStyle 硬調樣式」改成完全自繪的 `CustomTabBar`（固定 `height:48` 的 `<View>`），避免以後又要跟 react-navigation 的內部樣式合併行為打架
+  - 過程中也發現這個專案的 Metro（本輪之前就常態用 nohup 背景執行）file watcher 疑似壞掉——存檔後重新整理 app 都只看到 log 顯示 bundle 了「1 module」，不是完整重新打包；用 `--clear` 全新啟動 Metro 兩次才確認拿到真正反映最新程式碼的 bundle（1837 modules）。之後這個專案如果再遇到「明明改了程式碼、畫面卻沒變」，先懷疑 Metro watcher 而不是自己的程式碼邏輯
+- 執行過的驗證：
+  - `npx tsc --noEmit` 無錯誤
+  - `npx jest` 全過（7 suites，34 tests）
+  - Metro `--clear` 全新啟動後（確認 1837 modules 完整 bundle），用 `xcrun simctl openurl booted "sparkshape:///(tabs)/current"` 深連結逐一開三個分頁，screenshot 後用 Python/PIL 量測分頁列粉色色塊的實際像素高度：修好前 246px（=82pt，等於分頁列 48pt ＋ 多餘安全區 34pt）；修好後 144px（=48pt，跟程式碼設定的高度完全吻合）
+  - 三個分頁（目前身材/照片牆/身型對比）screenshot 目視確認樣式一致、「編輯數據/刪除數據」按鈕不再被分頁列遮住
+- 已知風險或未解決問題：無
+- 下一步最佳動作：commit 本輪修改；下次工作階段開始時照常從 feature_list.json 選下一個 not_started 功能
 
 ### 工作階段 010
 

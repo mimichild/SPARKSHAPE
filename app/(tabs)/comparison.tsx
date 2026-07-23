@@ -447,7 +447,7 @@ export default function ComparisonScreen() {
   const hasComparison = confirmedDates.length === 2;
 
   return (
-    <SafeAreaView style={[s.root, { backgroundColor: themeColor }]} {...swipeHandlers}>
+    <SafeAreaView style={[s.root, { backgroundColor: themeColor }]} edges={['top', 'left', 'right']} {...swipeHandlers}>
       <TabHeader title="身型對比" rightComponent={TypeToggle} />
 
       <View style={s.content}>

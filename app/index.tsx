@@ -1,8 +1,6 @@
 import {
-  Alert,
   Animated,
   Easing,
-  Linking,
   Platform,
   StyleSheet,
   Text,
@@ -15,42 +13,6 @@ import { useEffect, useRef, useState } from 'react';
 import { SettingsSheet } from '@/components/SettingsSheet';
 import { AdBanner } from '@/components/AdBanner';
 import { useSettingsStore } from '@/stores/settingsStore';
-
-// 開啟 SPARK 系列 App（iOS / Android 均使用 URL Scheme）
-const APP_DOWNLOAD_URLS: Record<string, string> = {
-  sparkplate: 'https://drive.google.com/file/d/1_sbu3LG46hKvYkWJjPbFPii0_V4b4dJd/view?usp=drive_link',
-};
-
-async function openApp(scheme: string) {
-  try {
-    const url = `${scheme}://`;
-    const canOpen = await Linking.canOpenURL(url).catch(() => false);
-    if (!canOpen) {
-      const downloadUrl = APP_DOWNLOAD_URLS[scheme];
-      if (downloadUrl) {
-        Alert.alert(
-          '尚未安裝',
-          '找不到此應用程式，是否前往下載？',
-          [
-            { text: '取消', style: 'cancel' },
-            { text: '前往下載', onPress: () => Linking.openURL(downloadUrl) },
-          ],
-        );
-      } else {
-        Alert.alert('找不到 App', '請確認手機已安裝此應用程式。');
-      }
-      return;
-    }
-    await Linking.openURL(url);
-  } catch {
-    const downloadUrl = APP_DOWNLOAD_URLS[scheme];
-    if (downloadUrl) {
-      Linking.openURL(downloadUrl);
-    } else {
-      Alert.alert('找不到 App', '請確認手機已安裝此應用程式。');
-    }
-  }
-}
 
 export default function WelcomeScreen() {
   const [settingsVisible, setSettingsVisible] = useState(false);
@@ -119,23 +81,6 @@ export default function WelcomeScreen() {
           <Text style={s.settingsLabel}> 設定</Text>
         </TouchableOpacity>
 
-        {/* 系列 App 連結 */}
-        <View style={s.appsRow}>
-          <TouchableOpacity
-            activeOpacity={0.6}
-            onPress={() => openApp('sparkplate')}
-          >
-            <Text style={s.appLink}>SPARK PLATE</Text>
-          </TouchableOpacity>
-          <View style={s.appLinkGap} />
-          <TouchableOpacity
-            activeOpacity={0.6}
-            onPress={() => openApp('sparkfit')}
-          >
-            <Text style={s.appLink}>SPARK FIT</Text>
-          </TouchableOpacity>
-        </View>
-
         {/* 開始使用 */}
         <TouchableOpacity
           style={[s.ctaBtn, { backgroundColor: themeColor }]}
@@ -194,15 +139,6 @@ const s = StyleSheet.create({
     fontWeight: '300',
   },
 
-  appsRow: { flexDirection: 'row', alignItems: 'center' },
-  appLink: {
-    fontSize: 11,
-    color: '#AAAAAA',
-    letterSpacing: 2,
-    fontWeight: '400',
-    textDecorationLine: 'underline',
-  },
-  appLinkGap: { width: 40 },
 
   ctaBtn: {
     width: '100%',

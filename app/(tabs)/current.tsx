@@ -312,7 +312,7 @@ export default function CurrentBodyScreen() {
   const measureSrc  = latestFront ?? latestSide;
 
   return (
-    <SafeAreaView style={[s.root, { backgroundColor: themeColor }]} {...swipeHandlers}>
+    <SafeAreaView style={[s.root, { backgroundColor: themeColor }]} edges={['top', 'left', 'right']} {...swipeHandlers}>
       <TabHeader title="目前身材" />
 
       <KeyboardAvoidingView

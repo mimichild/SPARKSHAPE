@@ -106,7 +106,7 @@ export default function PhotoWallScreen() {
   const isEmpty = !loading && filtered.length === 0;
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: themeColor }]} {...swipeHandlers}>
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColor }]} edges={['top', 'left', 'right']} {...swipeHandlers}>
       <TabHeader title={isSelecting ? `已選 ${selectedIds.size} 張` : '照片牆'} rightComponent={Toggle} />
 
       <View style={styles.content}>
