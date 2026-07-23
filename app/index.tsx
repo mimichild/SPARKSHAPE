@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { SettingsSheet } from '@/components/SettingsSheet';
+import { AdBanner } from '@/components/AdBanner';
 import { useSettingsStore } from '@/stores/settingsStore';
 
 // 開啟 SPARK 系列 App（iOS / Android 均使用 URL Scheme）
@@ -56,6 +57,7 @@ export default function WelcomeScreen() {
   const {
     themeColor, openCameraOnLaunch, triggerCameraOpen,
     loaded, hasAutoLaunched, markAutoLaunched,
+    pendingSettingsOpen, clearPendingSettingsOpen,
   } = useSettingsStore();
 
   // 若設定「開啟時直接用相機打開」，只在冷啟動時觸發一次（hasAutoLaunched 防重複）
@@ -67,6 +69,13 @@ export default function WelcomeScreen() {
       router.replace('/(tabs)/current');
     }
   }, [loaded]);
+
+  useEffect(() => {
+    if (pendingSettingsOpen) {
+      setSettingsVisible(true);
+      clearPendingSettingsOpen();
+    }
+  }, [pendingSettingsOpen, clearPendingSettingsOpen]);
 
   // 淡入動畫
   const heroFade  = useRef(new Animated.Value(0)).current;
@@ -136,6 +145,8 @@ export default function WelcomeScreen() {
           <Text style={s.ctaText}>開始使用</Text>
         </TouchableOpacity>
       </Animated.View>
+
+      <AdBanner />
 
       {/* 設定面板 */}
       <SettingsSheet

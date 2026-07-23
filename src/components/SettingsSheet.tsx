@@ -1,6 +1,7 @@
 import {
   Alert,
   Keyboard,
+  Platform,
   ScrollView,
   StyleSheet,
   Switch,
@@ -19,6 +20,9 @@ import {
   exportBackup,
   importBackup,
 } from '@/services/backupService';
+import { AdBanner } from '@/components/AdBanner';
+import { useProGate } from '@/hooks/useProGate';
+import { purchasePro, restorePurchases } from '@/services/purchases';
 
 type IoniconsName = ComponentProps<typeof Ionicons>['name'];
 
@@ -30,6 +34,7 @@ interface Props {
 export function SettingsSheet({ visible, onClose }: Props) {
   const store = useSettingsStore();
   const db    = useSQLiteContext();
+  const { isProUnlocked, requirePro } = useProGate();
 
   // 本地（暫存）狀態，按下確認套用才寫入 store
   const [localOpenCamera, setLocalOpenCamera] = useState(store.openCameraOnLaunch);
@@ -40,6 +45,10 @@ export function SettingsSheet({ visible, onClose }: Props) {
   // 備份進度
   const [backupProgress, setBackupProgress] = useState<number | null>(null);
   const [backupMessage,  setBackupMessage]  = useState('');
+
+  // Pro 升級／恢復購買
+  const [purchasing, setPurchasing] = useState(false);
+  const [restoring,  setRestoring]  = useState(false);
 
   // 每次開啟面板時同步最新 store 值
   useEffect(() => {
@@ -53,6 +62,7 @@ export function SettingsSheet({ visible, onClose }: Props) {
 
   // ── 匯出 ──
   async function handleExport() {
+    if (!requirePro('匯出備份')) return;
     const dirResult = await pickExportDirectory();
     if (!dirResult.granted) return;
 
@@ -95,6 +105,7 @@ export function SettingsSheet({ visible, onClose }: Props) {
   }
 
   function handleImport() {
+    if (!requirePro('匯入備份')) return;
     Alert.alert(
       '選擇還原模式',
       '請選擇匯入方式：',
@@ -115,6 +126,34 @@ export function SettingsSheet({ visible, onClose }: Props) {
       height:             localHeight.trim(),
     });
     onClose();
+  }
+
+  async function handlePurchase() {
+    setPurchasing(true);
+    try {
+      const isPro = await purchasePro();
+      if (isPro) {
+        await store.setProUnlocked(true);
+        Alert.alert('升級成功', 'Pro 功能已啟用');
+      }
+    } catch (e) {
+      Alert.alert('升級失敗', e instanceof Error ? e.message : '請稍後再試');
+    } finally {
+      setPurchasing(false);
+    }
+  }
+
+  async function handleRestore() {
+    setRestoring(true);
+    try {
+      const isPro = await restorePurchases();
+      await store.setProUnlocked(isPro);
+      Alert.alert(isPro ? '還原成功' : '沒有找到可還原的購買紀錄', isPro ? 'Pro 功能已啟用' : '若你曾經購買過，請確認使用的是同一個 Apple ID');
+    } catch (e) {
+      Alert.alert('還原失敗', e instanceof Error ? e.message : '請稍後再試');
+    } finally {
+      setRestoring(false);
+    }
   }
 
   // 這裡刻意不用 <Modal>：匯出/匯入流程內部會呼叫 DocumentPicker /
@@ -138,6 +177,29 @@ export function SettingsSheet({ visible, onClose }: Props) {
           {/* 標題 */}
           <Text style={s.title}>設定</Text>
 
+          {/* ── Pro 解鎖 ── */}
+          <Text style={[s.sectionTitle, { color: localTheme }]}>PRO 解鎖</Text>
+          {Platform.OS === 'android' ? (
+            <Text style={s.proBadge}>✓ Pro 已解鎖（Android 版全功能免費開放）</Text>
+          ) : isProUnlocked ? (
+            <Text style={s.proBadge}>✓ Pro 已解鎖</Text>
+          ) : (
+            <View style={{ marginBottom: 12 }}>
+              <Text style={s.toggleDesc}>升級 Pro 即可解鎖開機用相機、拍照自動下載、主題色、匯出匯入，並移除廣告</Text>
+              <TouchableOpacity
+                style={[s.backupBtnFilled, { backgroundColor: localTheme, marginTop: 12 }]}
+                onPress={handlePurchase}
+                disabled={purchasing}
+                activeOpacity={0.82}
+              >
+                <Text style={s.backupBtnFilledText}>{purchasing ? '處理中…' : '升級 Pro'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleRestore} disabled={restoring} activeOpacity={0.7} style={{ alignItems: 'center', paddingVertical: 8 }}>
+                <Text style={{ color: localTheme, fontSize: 13, fontWeight: '600' }}>{restoring ? '還原中…' : '恢復購買'}</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           {/* ── 開關：開啟時直接用相機打開 ── */}
           <View style={s.toggleRow}>
             <View style={s.toggleLabels}>
@@ -146,7 +208,7 @@ export function SettingsSheet({ visible, onClose }: Props) {
             </View>
             <Switch
               value={localOpenCamera}
-              onValueChange={setLocalOpenCamera}
+              onValueChange={(v) => { if (!requirePro('開啟時直接用相機打開')) return; setLocalOpenCamera(v); }}
               trackColor={{ false: '#E0E0E0', true: localTheme + '99' }}
               thumbColor={localOpenCamera ? localTheme : '#F4F4F4'}
               ios_backgroundColor="#E0E0E0"
@@ -161,7 +223,7 @@ export function SettingsSheet({ visible, onClose }: Props) {
             </View>
             <Switch
               value={localAutoSave}
-              onValueChange={setLocalAutoSave}
+              onValueChange={(v) => { if (!requirePro('拍照時自動下載照片')) return; setLocalAutoSave(v); }}
               trackColor={{ false: '#E0E0E0', true: localTheme + '99' }}
               thumbColor={localAutoSave ? localTheme : '#F4F4F4'}
               ios_backgroundColor="#E0E0E0"
@@ -191,7 +253,7 @@ export function SettingsSheet({ visible, onClose }: Props) {
               <TouchableOpacity
                 key={color}
                 style={[s.colorCircle, { backgroundColor: color }]}
-                onPress={() => setLocalTheme(color)}
+                onPress={() => { if (!requirePro('主題色')) return; setLocalTheme(color); }}
                 activeOpacity={0.75}
               >
                 {localTheme === color && (
@@ -241,6 +303,8 @@ export function SettingsSheet({ visible, onClose }: Props) {
           <TouchableOpacity style={s.closeBtn} onPress={onClose} activeOpacity={0.7}>
             <Text style={s.closeText}>關閉</Text>
           </TouchableOpacity>
+
+          <AdBanner />
         </ScrollView>
 
         {/* ── 備份進度 overlay ── */}
@@ -359,6 +423,12 @@ const s = StyleSheet.create({
     fontWeight: '500',
     color: '#555',
     marginBottom: 14,
+  },
+  proBadge: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#43a047',
+    marginBottom: 12,
   },
   colorGrid: {
     flexDirection: 'row',

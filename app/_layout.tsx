@@ -3,13 +3,26 @@ import { StyleSheet } from 'react-native';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SQLiteProvider } from 'expo-sqlite';
+import mobileAds from 'react-native-google-mobile-ads';
 import { initDB } from '@/services/bodyPhotoService';
 import { DB_NAME } from '@/constants/db';
 import { useSettingsStore } from '@/stores/settingsStore';
+import { fetchProStatus } from '@/services/purchases';
+
+mobileAds().initialize();
 
 function SettingsLoader() {
   const loadSettings = useSettingsStore((s) => s.loadSettings);
+  const setProUnlocked = useSettingsStore((s) => s.setProUnlocked);
   useEffect(() => { loadSettings(); }, []);
+
+  useEffect(() => {
+    // RevenueCat 尚未設定（沒有 API Key）時回傳 null，維持本機既有的 Pro 狀態，不要用 null 蓋掉。
+    fetchProStatus().then(isPro => {
+      if (isPro != null) setProUnlocked(isPro);
+    });
+  }, []);
+
   return null;
 }
 

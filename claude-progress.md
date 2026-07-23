@@ -8,12 +8,31 @@
 
 - 儲存庫根目錄：/Users/mimi/Documents/SPARKSHAPE
 - 標準啟動路徑：`RUN_START_COMMAND=1 ./init.sh`（實際指令見 init.sh 的 START_CMD）
-- 標準驗證路徑：./init.sh（pnpm install + pnpm test；2026-07-22 為 17 tests passed）
-- 目前最高優先級未完成功能：無（feature_list.json 目前全部 passing）
+- 標準驗證路徑：./init.sh（pnpm install + pnpm test；2026-07-23 為 34 tests passed）
+- 目前最高優先級未完成功能：monetization-001（in_progress）——AdMob＋RevenueCat＋Pro 功能鎖，複製自 SPARKWEAR/SPARKPLATE 範本；build/tsc/單元測試都過，模擬器上確認過主流程，個別鎖點還沒逐一手動點過，待使用者測一輪
 - 目前 blocker：無
 - 背景：Apple Developer Program 已生效（2026-07-20）；ios-001～ios-006、native-001 皆已 passing（含 TestFlight 實機驗證），EAS 雲端建置成功產出 .ipa，也驗證了兩個 config plugin（fmt/RCTBridge）在雲端環境確實有效；實機測試核心流程（相機拍照/相簿選圖/資料持久化）皆無問題；App icon 圓形外菱格紋殘留問題已修好並實機確認（同時解決 iOS 與 Android，因為兩邊共用同一張來源圖）；已設定 EAS Update（OTA）支援與 eas.json ascAppId（submit 可完全非互動執行）
 
 ## 工作階段日誌
+
+### 工作階段 010
+
+- 日期：2026-07-23
+- 本輪目標：複製 SPARKWEAR/SPARKPLATE 的付費功能範本到 SPARKSHAPE（monetization-001）
+- 已完成：
+  - 安裝 `react-native-google-mobile-ads`（鎖定 16.3.4）與 `react-native-purchases`
+  - 新增 `src/constants/monetization.ts`、`src/services/purchases.ts`、`src/hooks/useIsPro.ts`、`src/hooks/useProGate.ts`、`src/components/AdBanner.tsx`
+  - `settingsStore.ts` 加 `isProUnlocked`/`setProUnlocked`/`pendingSettingsOpen`（沿用 SPARKPLATE 那套 pattern，因為這個 App 的設定也是面板不是獨立畫面）
+  - `SettingsSheet.tsx` 加 PRO 解鎖區塊；因為這個元件是「本地暫存、按確認套用才寫入 store」的設計，Pro 鎖選在互動當下（Switch onValueChange／色票 onPress）就攔截而不是最後 handleApply 才攔截，避免連未鎖定的「身高」欄位一起卡住
+  - 廣告放置：首頁、三個分頁（掛在 `app/(tabs)/_layout.tsx` 共用一條，分頁列改固定高度 56）
+  - 這個專案第一次有測試需要 import `settingsStore`，發現原本完全沒設定 `@react-native-async-storage/async-storage` 的 jest mock（`[@RNC/AsyncStorage]: NativeModule: AsyncStorage is null` 報錯），補上官方提供的 mock 檔案並用 moduleNameMapper 接上（用 setupFiles 掛載不會生效，因為官方 mock 檔本身只 export 物件、不會自動呼叫 jest.mock，要用 moduleNameMapper 直接替換整個模組）
+  - 新增對應單元測試，34 tests 全過；`npx tsc --noEmit -p .` 完全無錯誤
+  - `npx expo prebuild --platform ios && pod install` 成功；`npx expo run:ios` 建置成功並在模擬器實測：首頁看得到 AdMob 測試廣告、設定面板正常渲染 PRO 解鎖區塊、點「升級 Pro」正確跳出『升級失敗：RevenueCat 尚未設定，無法購買』
+- 執行過的驗證：`./init.sh`（34 tests passed）、`npx tsc --noEmit -p .`（無錯誤）、模擬器手動操作（主流程）
+- 已擷取證據：見 feature_list.json monetization-001 evidence
+- 提交記錄：（見本輪 commit）
+- 已知風險或未解決問題：個別鎖點（開機用相機/拍照自動下載開關、主題色、匯出、匯入、恢復購買、Android 全功能開放、三個分頁的廣告位置）還沒逐一手動點過
+- 下一步最佳動作：使用者有空時自己測一輪個別鎖點 → monetization-001 改 passing；接著複製到 SPARKFIT/SPARKLOG
 
 ### 工作階段 009
 

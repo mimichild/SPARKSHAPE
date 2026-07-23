@@ -17,6 +17,7 @@ export const THEME_COLORS = [
 export const DEFAULT_THEME = '#E8A8A4';
 
 const STORAGE_KEY = '@sparkshape_settings';
+const PRO_STORAGE_KEY = '@sparkshape_isProUnlocked';
 
 interface SettingsData {
   openCameraOnLaunch: boolean;
@@ -27,14 +28,19 @@ interface SettingsData {
 
 interface SettingsState extends SettingsData {
   loaded: boolean;
+  isProUnlocked: boolean;
   pendingCameraOpen: boolean;
   /** session flag：冷啟動時觸發一次後設為 true，返回首頁時不再重複觸發 */
   hasAutoLaunched: boolean;
+  pendingSettingsOpen: boolean; // session-only, not persisted
   loadSettings: () => Promise<void>;
   applySettings: (patch: Partial<SettingsData>) => Promise<void>;
+  setProUnlocked: (v: boolean) => Promise<void>;
   triggerCameraOpen: () => void;
   clearPendingCameraOpen: () => void;
   markAutoLaunched: () => void;
+  triggerSettingsOpen: () => void;
+  clearPendingSettingsOpen: () => void;
 }
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
@@ -43,17 +49,22 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   themeColor: DEFAULT_THEME,
   height: '',
   loaded: false,
+  isProUnlocked: false,
   pendingCameraOpen: false,
   hasAutoLaunched: false,
+  pendingSettingsOpen: false,
 
   loadSettings: async () => {
     try {
-      const json = await AsyncStorage.getItem(STORAGE_KEY);
+      const [json, isPro] = await Promise.all([
+        AsyncStorage.getItem(STORAGE_KEY),
+        AsyncStorage.getItem(PRO_STORAGE_KEY),
+      ]);
       if (json) {
         const saved: Partial<SettingsData> = JSON.parse(json);
-        set({ ...saved, loaded: true });
+        set({ ...saved, isProUnlocked: isPro === 'true', loaded: true });
       } else {
-        set({ loaded: true });
+        set({ isProUnlocked: isPro === 'true', loaded: true });
       }
     } catch {
       set({ loaded: true });
@@ -77,7 +88,14 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     }
   },
 
+  setProUnlocked: async (v: boolean) => {
+    set({ isProUnlocked: v });
+    await AsyncStorage.setItem(PRO_STORAGE_KEY, String(v));
+  },
+
   triggerCameraOpen: () => set({ pendingCameraOpen: true }),
   clearPendingCameraOpen: () => set({ pendingCameraOpen: false }),
   markAutoLaunched: () => set({ hasAutoLaunched: true }),
+  triggerSettingsOpen: () => set({ pendingSettingsOpen: true }),
+  clearPendingSettingsOpen: () => set({ pendingSettingsOpen: false }),
 }));

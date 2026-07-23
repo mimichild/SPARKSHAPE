@@ -157,6 +157,28 @@
         "2026-07-22 | eas.json 補上 ascAppId，eas build + eas submit（Build 2）→ App Store Connect 加入內部測試群組 → iPhone TestFlight 安裝 | 使用者實機確認「現在看起來都正常了」"
       ],
       "notes": "2026-07-21 使用者實機在 TestFlight 桌面圖示上發現。exif:Software 顯示曾用 Picasa 編輯，推測是設計軟體匯出時沒把代表透明背景的棋盤格提示圖案壓平成純色就直接存檔。2026-07-22 修好：實際範圍比原本以為的「只有角落」大，整個圓形外的背景都是棋盤格。單純用 -opaque 配 fuzz 比對單一顏色行不通（fuzz 不夠會殘留、fuzz 太多會連粉紅圓形一起洗掉，兩者的安全區間互相重疊沒有交集），改用色彩飽和度判斷（無色彩的灰階像素一律轉純白，其餘保留）才乾淨解決，且不受棋盤格灰階雜訊變動影響。同一張 icon.png 也是 app.json 裡 Android adaptiveIcon 的 foregroundImage，這次修復對 Android 版也一併有效（原本沒發現 Android 端有沒有同樣問題，這次順便解決）。沒有另外處理的殘留風險：圖檔本身仍是不透明 RGB（無 alpha），跟改動前一致，不影響 Android adaptive icon 遮罩行為。"
+    },
+    {
+      "id": "monetization-001",
+      "priority": 8,
+      "area": "monetization",
+      "title": "AdMob 橫幅廣告＋RevenueCat 訂閱＋Pro 功能鎖（複製 SPARKWEAR 範本）",
+      "user_visible_behavior": "iOS 免費使用者：無法使用開機用相機、拍照自動下載、主題色、匯出匯入，點到這些功能會跳出升級提示；首頁、三個分頁（目前身材/照片牆/身型對比，掛在分頁列下方共用一條）底部能看到橫幅廣告。iOS Pro 使用者（RevenueCat 訂閱，或按「恢復購買」）：以上功能全部解鎖、無廣告。Android：沒有付費入口，一律視為 Pro，全部功能免費開放、不顯示廣告。",
+      "status": "in_progress",
+      "verification": [
+        "pnpm test 全部通過（含新增 useIsPro.test.ts/useProGate.test.ts/purchases.test.ts）。",
+        "npx tsc --noEmit -p . 無新增型別錯誤。",
+        "模擬器（iOS，免費狀態）：點選開機用相機開關/拍照自動下載開關/主題色/匯出/匯入，皆跳出「為 Pro 專屬功能」升級提示。",
+        "模擬器：畫面上能看到 AdMob 測試橫幅廣告正常渲染（非 Pro 狀態），涵蓋首頁、三個分頁（共用一條，在分頁列下方）。",
+        "確認 RevenueCat 相關程式碼在 REVENUECAT_API_KEY 為空字串時不會 crash，purchasePro/restorePurchases 安全地丟出明確錯誤並在畫面上顯示提示。"
+      ],
+      "evidence": [
+        "2026-07-23 | ./init.sh | 34 tests passed（含新增 useIsPro.test.ts 3 項、useProGate.test.ts 3 項、purchases.test.ts 11 項；另外補上這個專案原本缺少的 @react-native-async-storage/async-storage jest mock，這次才第一次有測試需要 import settingsStore）",
+        "2026-07-23 | npx tsc --noEmit -p . | 無錯誤",
+        "2026-07-23 | npx expo prebuild --platform ios && pod install | RNGoogleMobileAds 16.3.4、RevenueCat 5.81.1 成功安裝",
+        "2026-07-23 | npx expo run:ios 建置成功（0 error）並在 iPhone 17 Pro 模擬器實測 | 首頁正常顯示且能看到 AdMob 測試廣告；點「設定」開啟 SettingsSheet 正常渲染（PRO 解鎖區塊、兩個開關、身高輸入、主題色皆正常顯示，無 crash）；點「升級 Pro」正確觸發 purchasePro() 並顯示『升級失敗：RevenueCat 尚未設定，無法購買』"
+      ],
+      "notes": "對應 monetization_spec_5_apps 記憶；複製 SPARKWEAR/SPARKPLATE 的 useProGate/useIsPro/AdBanner/purchases.ts/monetization.ts 範本。react-native-google-mobile-ads 直接鎖定 16.3.4（Kotlin 版本天花板問題，見 SPARKWEAR feedback_android_native_stale_config 記憶規則五）。設定用 SettingsSheet（非 Modal 元件，絕對定位 View，注意元件內註解說明過這是為了避免巢狀原生 Modal 卡死），從 app/index.tsx 開啟；升級提示的『前往設定』改成 pendingSettingsOpen flag＋router.push('/')，跟 SPARKPLATE 同一套 pattern。SettingsSheet 是「本地暫存、按確認套用才寫入 store」的設計，所以 Pro 鎖選在互動當下（Switch onValueChange／色票 onPress）就攔截，不是在最後 handleApply 才攔截，這樣才不會連同一起送出的、沒有被鎖的「身高」欄位一起被卡住。分頁列（app/(tabs)/_layout.tsx）改成固定高度 56，AdBanner 掛在 <Tabs> 外層共用。模擬器上已確認主流程（設定頁正常渲染、升級 Pro 按鈕正確顯示錯誤提示、首頁廣告正常載入），但個別鎖點（開機用相機/拍照自動下載開關、主題色、匯出、匯入各自的升級提示、恢復購買、Android 全功能開放、三個分頁的廣告位置）還沒逐一手動點過，待使用者有空自己測一輪確認後改 passing（跟 SPARKPLATE 走同樣流程）。"
     }
   ]
 }
