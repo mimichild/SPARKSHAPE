@@ -9,12 +9,21 @@
 - 儲存庫根目錄：/Users/mimi/Documents/SPARKSHAPE
 - 標準啟動路徑：`RUN_START_COMMAND=1 ./init.sh`（實際指令見 init.sh 的 START_CMD）
 - 標準驗證路徑：./init.sh（pnpm install + pnpm test；2026-07-23 為 34 tests passed）
-- monetization-001：passing（2026-07-23，使用者實機逐一測試個別鎖點確認無誤）；已移除首頁互連連結（SPARK FIT/PLATE），並修好三個分頁的分頁列高度（見工作階段 011）；AdMob 真實 iOS App ID 已設定（ca-app-pub-8914492142878610~4848460972），廣告單元 ID 待提供；Android 維持 Google 測試 ID
+- monetization-001：passing（2026-07-23，使用者實機逐一測試個別鎖點確認無誤）；已移除首頁互連連結（SPARK FIT/PLATE），並修好三個分頁的分頁列高度（見工作階段 011）；AdMob 真實 iOS App ID（ca-app-pub-8914492142878610~4848460972）與廣告單元 ID（ca-app-pub-8914492142878610/3627858585）皆已設定；Android 維持 Google 測試 ID；待辦：跑一次原生 build 讓新 ID 生效、之後設定 RevenueCat
 - 目前最高優先級未完成功能：無（feature_list.json 內下一個 not_started 功能待下輪選取）
 - 目前 blocker：無
 - 背景：Apple Developer Program 已生效（2026-07-20）；ios-001～ios-006、native-001 皆已 passing（含 TestFlight 實機驗證），EAS 雲端建置成功產出 .ipa，也驗證了兩個 config plugin（fmt/RCTBridge）在雲端環境確實有效；實機測試核心流程（相機拍照/相簿選圖/資料持久化）皆無問題；App icon 圓形外菱格紋殘留問題已修好並實機確認（同時解決 iOS 與 Android，因為兩邊共用同一張來源圖）；已設定 EAS Update（OTA）支援與 eas.json ascAppId（submit 可完全非互動執行）
 
 ## 工作階段日誌
+
+### 工作階段 014
+
+- 日期：2026-07-23
+- 本輪目標：使用者在 AdMob 後台建好橫幅廣告單元，把測試版位換成正式的
+- 已完成：`src/constants/monetization.ts` 的 `BANNER_AD_UNIT_ID` 改成 `Platform.select`，iOS 用正式 ID `ca-app-pub-8914492142878610/3627858585`，Android 維持 `TestIds.BANNER`
+- 執行過的驗證：`npx tsc --noEmit`（無新增錯誤）；`npx jest`（7 suites、34 tests 全過）
+- 已知風險或未解決問題：需要重新原生 build 才會真正生效；AdMob 應用程式狀態目前是「需審核」
+- 下一步最佳動作：找時間跑一次原生 build 讓新 ID 生效；之後設定 RevenueCat
 
 ### 工作階段 013
 
