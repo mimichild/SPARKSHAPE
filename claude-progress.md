@@ -16,6 +16,15 @@
 
 ## 工作階段日誌
 
+### 工作階段 012
+
+- 日期：2026-07-23
+- 本輪目標：分頁列底部安全區改成依「有沒有廣告」動態決定（跟其他四個 App 同步處理）
+- 已完成：`app/(tabs)/_layout.tsx` 的 `CustomTabBar`（上一輪剛改成自繪）加 `useSafeAreaInsets()` + `useIsPro()`，`bottomInset = isPro ? insets.bottom : 0`，動態加到容器 `height`/`paddingBottom`
+- 執行過的驗證：`npx tsc --noEmit`（無錯誤）；`npx jest`（7 suites、34 tests 全過）；模擬器（免費/有廣告狀態）screenshot＋PIL 像素量測確認分頁列高度維持 144px＝48pt（跟上一輪修好後一致，代表 `bottomInset=0` 這個分支沒有被改壞）
+- 已知風險或未解決問題：Pro（無廣告）分支目前無法在模擬器上實測（RevenueCat 尚未設定金鑰），邏輯依賴標準 `useSafeAreaInsets()` 疊加，未做額外模擬器驗證
+- 下一步最佳動作：待 RevenueCat 金鑰設定好或有 Android 實機時，實際切到 Pro 狀態確認分頁列底部有補回安全區
+
 ### 工作階段 011
 
 - 日期：2026-07-23
