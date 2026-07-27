@@ -15,7 +15,7 @@ export const BANNER_AD_UNIT_ID = Platform.select({
 // 專案設定裡拿到的正式金鑰（iOS 用 App Store 專案的 key；Android 目前不開放
 // 訂閱購買，這個 key 留空字串）。
 export const REVENUECAT_API_KEY = Platform.select({
-  ios: '', // TODO: 換成 RevenueCat 專案設定裡的 Apple API Key
+  ios: 'appl_kpPQYYlfxadsVyGttcAgdWNOtfo',
   android: '', // Android 目前不開放訂閱購買（見 monetization_spec_5_apps 記憶），留空即可
   default: '',
 }) ?? '';
