@@ -9,12 +9,21 @@
 - 儲存庫根目錄：/Users/mimi/Documents/SPARKSHAPE
 - 標準啟動路徑：`RUN_START_COMMAND=1 ./init.sh`（實際指令見 init.sh 的 START_CMD）
 - 標準驗證路徑：./init.sh（pnpm install + pnpm test；2026-07-23 為 34 tests passed）
-- monetization-001：passing；AdMob 真實 ID 已設定；**RevenueCat 已完整設定並拿到正式 Public API Key**（`appl_kpPQYYlfxadsVyGttcAgdWNOtfo`，已寫入程式碼）；待辦：跑一次原生 build 讓所有改動生效，之後實機測真實購買流程
+- monetization-001：passing；AdMob／RevenueCat 已設定並已實機 build 安裝成功；購買流程實測時遇到 RevenueCat 官方已知事故（詳見 SPARKWEAR 的 monetization_spec_5_apps 記憶），待事故排除後重測
 - 目前最高優先級未完成功能：無（feature_list.json 內下一個 not_started 功能待下輪選取）
-- 目前 blocker：無
+- 目前 blocker：RevenueCat 購買測試卡在官方事故（非本專案問題），等對方修復
 - 背景：Apple Developer Program 已生效（2026-07-20）；ios-001～ios-006、native-001 皆已 passing（含 TestFlight 實機驗證），EAS 雲端建置成功產出 .ipa，也驗證了兩個 config plugin（fmt/RCTBridge）在雲端環境確實有效；實機測試核心流程（相機拍照/相簿選圖/資料持久化）皆無問題；App icon 圓形外菱格紋殘留問題已修好並實機確認（同時解決 iOS 與 Android，因為兩邊共用同一張來源圖）；已設定 EAS Update（OTA）支援與 eas.json ascAppId（submit 可完全非互動執行）
 
 ## 工作階段日誌
+
+### 工作階段 016
+
+- 日期：2026-07-27
+- 本輪目標：實機建置驗證 AdMob／RevenueCat
+- 已完成：`npx expo run:ios --device` 成功建置並安裝到實機，App 正常開啟
+- 執行過的驗證：實機互動測試——升級 Pro 時遇到 RevenueCat 官方已知事故導致的錯誤（詳見 SPARKWEAR 的 monetization_spec_5_apps 記憶），排查過設定本身沒問題
+- 已知風險或未解決問題：購買流程尚未驗證成功；5 個 App 目前只有 SPARKWEAR 測試成功過
+- 下一步最佳動作：等 RevenueCat 網站上方事故提示消失後，直接開已裝好的 App 重測「升級 Pro」，不用重新 build；5 個 App 全部測過後才進入送 App Store 審查階段
 
 ### 工作階段 015
 
