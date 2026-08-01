@@ -19,7 +19,6 @@ export default function WelcomeScreen() {
   const {
     themeColor, openCameraOnLaunch, triggerCameraOpen,
     loaded, hasAutoLaunched, markAutoLaunched,
-    pendingSettingsOpen, clearPendingSettingsOpen,
   } = useSettingsStore();
 
   // 若設定「開啟時直接用相機打開」，只在冷啟動時觸發一次（hasAutoLaunched 防重複）
@@ -31,13 +30,6 @@ export default function WelcomeScreen() {
       router.replace('/(tabs)/current');
     }
   }, [loaded]);
-
-  useEffect(() => {
-    if (pendingSettingsOpen) {
-      setSettingsVisible(true);
-      clearPendingSettingsOpen();
-    }
-  }, [pendingSettingsOpen, clearPendingSettingsOpen]);
 
   // 淡入動畫
   const heroFade  = useRef(new Animated.Value(0)).current;

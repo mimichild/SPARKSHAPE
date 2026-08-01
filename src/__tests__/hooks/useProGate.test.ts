@@ -1,14 +1,14 @@
-jest.mock('expo-router', () => ({
-  router: { push: jest.fn() },
+jest.mock('@/services/purchases', () => ({
+  purchasePro: jest.fn(),
 }));
 
 import { Alert } from 'react-native';
 import { renderHook, act } from '@testing-library/react-native';
-import { router } from 'expo-router';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { useProGate } from '@/hooks/useProGate';
+import { purchasePro } from '@/services/purchases';
 
-const mockPush = router.push as jest.Mock;
+const mockPurchasePro = purchasePro as jest.Mock;
 
 describe('useProGate', () => {
   beforeEach(() => {
@@ -43,17 +43,37 @@ describe('useProGate', () => {
     );
   });
 
-  it('the alert "升級 Pro" button triggers settings open and navigates home', () => {
+  it('the alert "升級 Pro" button triggers a direct purchase and unlocks Pro on success', async () => {
+    mockPurchasePro.mockResolvedValue(true);
+    let upgradePress: (() => void) | undefined;
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => {
       const upgradeBtn = buttons?.find(b => b.text === '升級 Pro');
-      upgradeBtn?.onPress?.();
+      upgradePress = upgradeBtn?.onPress as (() => void) | undefined;
     });
     const { result } = renderHook(() => useProGate());
 
     act(() => { result.current.requirePro('匯出備份'); });
-
     expect(alertSpy).toHaveBeenCalled();
-    expect(useSettingsStore.getState().pendingSettingsOpen).toBe(true);
-    expect(mockPush).toHaveBeenCalledWith('/');
+
+    await act(async () => { await upgradePress?.(); });
+
+    expect(mockPurchasePro).toHaveBeenCalled();
+    expect(useSettingsStore.getState().isProUnlocked).toBe(true);
+    expect(alertSpy).toHaveBeenCalledWith('升級成功', 'Pro 功能已啟用');
+  });
+
+  it('the alert "升級 Pro" button shows an error alert when purchase fails', async () => {
+    mockPurchasePro.mockRejectedValue(new Error('RevenueCat 尚未設定，無法購買'));
+    let upgradePress: (() => void) | undefined;
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => {
+      const upgradeBtn = buttons?.find(b => b.text === '升級 Pro');
+      upgradePress = upgradeBtn?.onPress as (() => void) | undefined;
+    });
+    const { result } = renderHook(() => useProGate());
+
+    act(() => { result.current.requirePro('匯出備份'); });
+    await act(async () => { await upgradePress?.(); });
+
+    expect(alertSpy).toHaveBeenCalledWith('升級失敗', 'RevenueCat 尚未設定，無法購買');
   });
 });

@@ -32,15 +32,12 @@ interface SettingsState extends SettingsData {
   pendingCameraOpen: boolean;
   /** session flag：冷啟動時觸發一次後設為 true，返回首頁時不再重複觸發 */
   hasAutoLaunched: boolean;
-  pendingSettingsOpen: boolean; // session-only, not persisted
   loadSettings: () => Promise<void>;
   applySettings: (patch: Partial<SettingsData>) => Promise<void>;
   setProUnlocked: (v: boolean) => Promise<void>;
   triggerCameraOpen: () => void;
   clearPendingCameraOpen: () => void;
   markAutoLaunched: () => void;
-  triggerSettingsOpen: () => void;
-  clearPendingSettingsOpen: () => void;
 }
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
@@ -52,7 +49,6 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   isProUnlocked: false,
   pendingCameraOpen: false,
   hasAutoLaunched: false,
-  pendingSettingsOpen: false,
 
   loadSettings: async () => {
     try {
@@ -96,6 +92,4 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   triggerCameraOpen: () => set({ pendingCameraOpen: true }),
   clearPendingCameraOpen: () => set({ pendingCameraOpen: false }),
   markAutoLaunched: () => set({ hasAutoLaunched: true }),
-  triggerSettingsOpen: () => set({ pendingSettingsOpen: true }),
-  clearPendingSettingsOpen: () => set({ pendingSettingsOpen: false }),
 }));

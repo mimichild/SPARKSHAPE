@@ -9,12 +9,25 @@
 - 儲存庫根目錄：/Users/mimi/Documents/SPARKSHAPE
 - 標準啟動路徑：`RUN_START_COMMAND=1 ./init.sh`（實際指令見 init.sh 的 START_CMD）
 - 標準驗證路徑：./init.sh（pnpm install + pnpm test；2026-07-23 為 34 tests passed）
-- monetization-001：passing；AdMob／RevenueCat 已設定並已實機 build 安裝成功；購買流程實測時遇到 RevenueCat 官方已知事故（詳見 SPARKWEAR 的 monetization_spec_5_apps 記憶），待事故排除後重測
+- monetization-001：passing；AdMob／RevenueCat 已設定並**已實機驗證購買成功**（RevenueCat 官方事故已於 7/31 解決）；順帶修好 `useProGate.ts` 一個真實 bug（見最新工作階段）；5 個 SPARK App 監利化功能全部完成
 - 目前最高優先級未完成功能：無（feature_list.json 內下一個 not_started 功能待下輪選取）
-- 目前 blocker：RevenueCat 購買測試卡在官方事故（非本專案問題），等對方修復
+- 目前 blocker：無
 - 背景：Apple Developer Program 已生效（2026-07-20）；ios-001～ios-006、native-001 皆已 passing（含 TestFlight 實機驗證），EAS 雲端建置成功產出 .ipa，也驗證了兩個 config plugin（fmt/RCTBridge）在雲端環境確實有效；實機測試核心流程（相機拍照/相簿選圖/資料持久化）皆無問題；App icon 圓形外菱格紋殘留問題已修好並實機確認（同時解決 iOS 與 Android，因為兩邊共用同一張來源圖）；已設定 EAS Update（OTA）支援與 eas.json ascAppId（submit 可完全非互動執行）
 
 ## 工作階段日誌
+
+### 工作階段 017
+
+- 日期：2026-08-01
+- 本輪目標：RevenueCat 官方事故排除後重測，修好順便發現的真實 bug
+- 已完成：
+  - 實機重測「升級 Pro」確認購買流程成功（RevenueCat 事故已解決）
+  - 修正 `useProGate.ts`：「升級 Pro」按鈕從 `triggerSettingsOpen()` + `router.push('/')` 改成直接呼叫 `purchasePro()` 觸發真實購買（跟 SPARKPLATE 同一輪修正，原因是使用者觸發時通常已經身處設定面板，`showSettings` 狀態沒變化導致無可見效果）
+  - 清掉因此變成死碼的 `pendingSettingsOpen`／`triggerSettingsOpen`／`clearPendingSettingsOpen`（store 與 `app/index.tsx` 的 watcher useEffect）
+  - 更新 `src/__tests__/hooks/useProGate.test.ts` 對應新行為
+- 執行過的驗證：`npx tsc --noEmit`（無新增錯誤）；`npx jest`（7 suites、35 tests 全過）；實機互動測試確認修好
+- 已知風險或未解決問題：無
+- 下一步最佳動作：5 個 SPARK App 監利化功能（AdMob＋App Store 訂閱＋RevenueCat）全部完成並實機驗證通過，下一步是準備把訂閱功能跟新版 App 一起送 App Store 審查
 
 ### 工作階段 016
 
