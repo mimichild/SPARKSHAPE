@@ -1,5 +1,6 @@
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { FlashList } from '@shopify/flash-list';
 import { useCallback, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,17 +12,19 @@ import { useSettingsStore } from '@/stores/settingsStore';
 import { deleteBodyPhotoFiles } from '@/services/photoStorageService';
 import { BodyPhotoCard } from '@/components/BodyPhotoCard';
 import { PhotoPreviewModal } from '@/components/PhotoPreviewModal';
+import { ReviewScreen } from '@/components/ReviewScreen';
 import { TabHeader } from '@/components/TabHeader';
 import type { BodyPhoto, PhotoType } from '@/types/bodyPhoto';
 
 type IoniconsName = ComponentProps<typeof Ionicons>['name'];
 
 export default function PhotoWallScreen() {
-  const { photos, loading, removePhoto, reload } = useBodyPhotos('desc');
-  const [preview,     setPreview]     = useState<BodyPhoto | null>(null);
-  const [filter,      setFilter]      = useState<PhotoType>('front');
-  const [isSelecting, setIsSelecting] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const { photos, loading, removePhoto, updatePhotoMeta, reload } = useBodyPhotos('desc');
+  const [preview,      setPreview]      = useState<BodyPhoto | null>(null);
+  const [editTarget,   setEditTarget]   = useState<BodyPhoto | null>(null);
+  const [filter,       setFilter]       = useState<PhotoType>('front');
+  const [isSelecting,  setIsSelecting]  = useState(false);
+  const [selectedIds,  setSelectedIds]  = useState<Set<string>>(new Set());
 
   // 切換到此 Tab 時重新載入，確保顯示最新照片
   useFocusEffect(
@@ -84,6 +87,37 @@ export default function PhotoWallScreen() {
     );
   }
 
+  // ── 全螢幕預覽的編輯／刪除 ────────────────────────────────────────────────
+
+  function handleEditFromPreview(photo: BodyPhoto) {
+    setPreview(null);
+    setEditTarget(photo);
+  }
+
+  function handleDeleteFromPreview(photo: BodyPhoto) {
+    setPreview(null);
+    removePhoto(photo.id);
+    deleteBodyPhotoFiles(photo.id).catch(() => {});
+  }
+
+  async function handleEditConfirm(
+    result: Parameters<ComponentProps<typeof ReviewScreen>['onConfirm']>[0],
+  ) {
+    const target = editTarget;
+    setEditTarget(null);
+    if (!target) return;
+    await updatePhotoMeta(target.id, {
+      takenAt:    result.takenAt,
+      brightness: result.brightness,
+      contrast:   result.contrast,
+      weight:     result.weight,
+      chest:      result.chest,
+      waist:      result.waist,
+      lowerWaist: result.lowerWaist,
+      hip:        result.hip,
+    });
+  }
+
   // ── 右上角正面／側面切換 ─────────────────────────────────────────────────
 
   const Toggle = (
@@ -104,6 +138,30 @@ export default function PhotoWallScreen() {
   );
 
   const isEmpty = !loading && filtered.length === 0;
+
+  if (editTarget) {
+    return (
+      <Modal visible animationType="slide" statusBarTranslucent>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <ReviewScreen
+            photoUri={editTarget.fullPath}
+            photoType={editTarget.photoType}
+            mode="edit"
+            initialBrightness={editTarget.brightness}
+            initialContrast={editTarget.contrast}
+            initialTakenAt={editTarget.takenAt}
+            initialMeasurements={{
+              weight: editTarget.weight, chest: editTarget.chest,
+              waist:  editTarget.waist,  lowerWaist: editTarget.lowerWaist,
+              hip:    editTarget.hip,
+            }}
+            onConfirm={handleEditConfirm}
+            onRetake={() => setEditTarget(null)}
+          />
+        </GestureHandlerRootView>
+      </Modal>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: themeColor }]} edges={['top', 'left', 'right']} {...swipeHandlers}>
@@ -155,7 +213,12 @@ export default function PhotoWallScreen() {
         </View>
       )}
 
-      <PhotoPreviewModal photo={preview} onClose={() => setPreview(null)} />
+      <PhotoPreviewModal
+        photo={preview}
+        onClose={() => setPreview(null)}
+        onEdit={handleEditFromPreview}
+        onDelete={handleDeleteFromPreview}
+      />
       </View>
     </SafeAreaView>
   );

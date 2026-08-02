@@ -180,6 +180,27 @@
         "2026-07-23 | 使用者在模擬器逐一測試個別鎖點 | 使用者確認「測試都沒問題」"
       ],
       "notes": "對應 monetization_spec_5_apps 記憶；複製 SPARKWEAR/SPARKPLATE 的 useProGate/useIsPro/AdBanner/purchases.ts/monetization.ts 範本。react-native-google-mobile-ads 直接鎖定 16.3.4（Kotlin 版本天花板問題，見 SPARKWEAR feedback_android_native_stale_config 記憶規則五）。設定用 SettingsSheet（非 Modal 元件，絕對定位 View，注意元件內註解說明過這是為了避免巢狀原生 Modal 卡死），從 app/index.tsx 開啟；升級提示的『前往設定』改成 pendingSettingsOpen flag＋router.push('/')，跟 SPARKPLATE 同一套 pattern。SettingsSheet 是「本地暫存、按確認套用才寫入 store」的設計，所以 Pro 鎖選在互動當下（Switch onValueChange／色票 onPress）就攔截，不是在最後 handleApply 才攔截，這樣才不會連同一起送出的、沒有被鎖的「身高」欄位一起被卡住。分頁列（app/(tabs)/_layout.tsx）改成固定高度 56，AdBanner 掛在 <Tabs> 外層共用。模擬器上已確認主流程（設定頁正常渲染、升級 Pro 按鈕正確顯示錯誤提示、首頁廣告正常載入），但個別鎖點（開機用相機/拍照自動下載開關、主題色、匯出、匯入各自的升級提示、恢復購買、Android 全功能開放、三個分頁的廣告位置）還沒逐一手動點過，待使用者有空自己測一輪確認後改 passing（跟 SPARKPLATE 走同樣流程）。"
+    },
+    {
+      "id": "photowall-001",
+      "priority": 9,
+      "area": "feature",
+      "title": "照片牆預覽視窗支援修改拍攝日期與刪除照片",
+      "user_visible_behavior": "使用者在「照片牆」分頁點開單張照片的全螢幕預覽時，可以直接按「編輯」開啟跟拍照確認畫面相同的編輯畫面（可改拍攝日期、亮度/對比、身材數據），也可以直接按「刪除」（會先跳出確認提示）刪除這張照片，不需要退出預覽、改用長按多選才能刪除。",
+      "status": "passing",
+      "verification": [
+        "pnpm test 全部通過（含新增的 PhotoPreviewModal 元件測試）。",
+        "npx tsc --noEmit -p . 無新增型別錯誤。",
+        "模擬器：照片牆點開一張照片預覽，按「編輯」能開啟編輯畫面並改拍攝日期，確認後照片牆與資料庫的 taken_at 確實更新。",
+        "模擬器：照片牆點開一張照片預覽，按「刪除」跳出確認提示，確認後照片從照片牆與資料庫消失、對應檔案也被刪除。"
+      ],
+      "evidence": [
+        "2026-08-02 | 新增 src/__tests__/components/PhotoPreviewModal.test.tsx（先跑過確認紅燈：preview-edit/preview-delete 測試因元件尚無這兩顆按鈕而失敗）| 3 項測試皆如預期失敗",
+        "2026-08-02 | PhotoPreviewModal.tsx 新增 onEdit/onDelete 必要 props＋右上角編輯/刪除按鈕（刪除跳 Alert 確認）；wall.tsx 新增 editTarget 狀態，重用 current.tsx 同一套『ReviewScreen 包在 <Modal><GestureHandlerRootView> 內、mode=\"edit\"』模式開編輯畫面，確認後呼叫既有的 updatePhotoMeta | pnpm test 8 suites、38 tests 全過（含新測試轉綠燈）；npx tsc --noEmit -p . 無錯誤",
+        "2026-08-02 | 嘗試在第二個模擬器（iPhone 17 Pro Max，跟使用者正在用來截圖的 iPhone 17 Pro 分開）用 AppleScript/cliclick 模擬點擊做端對端模擬器驗證，seed 一筆測試照片進 sqlite 後成功點開照片牆／預覽視窗，確認畫面上已出現編輯/刪除兩顆按鈕；但後續要精準點擊按鈕座標時，發現這類全域滑鼠自動化會誤觸使用者當下正在用的其他視窗（PhotoScape X），經使用者確認畫面沒有被誤觸後，中止繼續用滑鼠自動化，改以程式碼比對＋既有測試作為證據 | 第二模擬器已 shutdown，不留殘留狀態",
+        "2026-08-02 | 使用者本人在自己正在用的模擬器（iPhone 17 Pro）實際操作：照片牆點開照片預覽 → 按編輯改日期 → 按刪除 | 使用者確認「SHAPE 的新功能我確定沒問題」"
+      ],
+      "notes": "研究發現：新增/編輯照片這條主流程（app/(tabs)/current.tsx → ReviewScreen）早就有日期選擇器（MiniCalendar）跟刪除功能，不是完全沒有；缺口只在「照片牆」分頁點開的全螢幕預覽（PhotoPreviewModal.tsx）——這裡目前只有關閉按鈕，沒有編輯/刪除入口。使用者要的其實是把這個既有能力也接到這個預覽視窗，不是從零建立日期選擇/刪除邏輯。實作完全重用既有、已上線驗證過的邏輯：PhotoPreviewModal 新增的編輯按鈕開的就是 current.tsx 早就在用的同一顆 ReviewScreen（mode='edit'），確認後呼叫的是既有、已有單元測試涵蓋的 updatePhotoMeta；刪除按鈕呼叫的是既有、已有單元測試涵蓋的 removePhoto + deleteBodyPhotoFiles，跟 current.tsx／wall.tsx 長按多選刪除是同一套函式。過程中一度嘗試用第二個模擬器＋滑鼠自動化（AppleScript/cliclick）驗證，發現這類全域滑鼠自動化有誤觸使用者其他視窗（PhotoScape X）的風險，已中止並經使用者確認畫面沒事；最終驗證改由使用者本人在自己的模擬器上實際操作編輯/刪除後確認沒問題。教訓：之後若要驗證模擬器 UI 互動，優先請使用者本人操作，不要用滑鼠座標自動化去點模擬器（風險是點到使用者當下真的在用的其他視窗）。"
     }
   ]
 }

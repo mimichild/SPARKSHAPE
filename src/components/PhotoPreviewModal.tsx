@@ -1,4 +1,5 @@
 import {
+  Alert,
   Dimensions,
   Image,
   Modal,
@@ -21,13 +22,16 @@ const SW = Dimensions.get('window').width;
 interface Props {
   photo: BodyPhoto | null;
   onClose: () => void;
+  onEdit: (photo: BodyPhoto) => void;
+  onDelete: (photo: BodyPhoto) => void;
 }
 
-export function PhotoPreviewModal({ photo, onClose }: Props) {
+export function PhotoPreviewModal({ photo, onClose, onEdit, onDelete }: Props) {
   const themeColor = useSettingsStore((s) => s.themeColor);
   const height     = useSettingsStore((s) => s.height);
 
   if (!photo) return null;
+  const currentPhoto: BodyPhoto = photo;
 
   const dateStr = new Date(photo.takenAt).toLocaleDateString('zh-TW', {
     year: 'numeric', month: 'long', day: 'numeric',
@@ -45,6 +49,13 @@ export function PhotoPreviewModal({ photo, onClose }: Props) {
   ];
 
   const photoTypeLabel = photo.photoType === 'front' ? '正面' : '側面';
+
+  function handleDeletePress() {
+    Alert.alert('確認刪除', '刪除後無法復原，確定要刪除這張照片嗎？', [
+      { text: '取消', style: 'cancel' },
+      { text: '刪除', style: 'destructive', onPress: () => onDelete(currentPhoto) },
+    ]);
+  }
 
   return (
     <Modal visible animationType="fade" statusBarTranslucent onRequestClose={onClose}>
@@ -94,10 +105,18 @@ export function PhotoPreviewModal({ photo, onClose }: Props) {
           )}
         </ScrollView>
 
-        {/* 關閉按鈕 */}
-        <TouchableOpacity style={s.closeBtn} onPress={onClose} testID="close-preview">
-          <Ionicons name={'close' as IoniconsName} size={24} color="#FFFFFF" />
-        </TouchableOpacity>
+        {/* 右上角動作列：編輯 / 刪除 / 關閉 */}
+        <View style={s.actionRow}>
+          <TouchableOpacity style={s.actionBtn} onPress={() => onEdit(currentPhoto)} testID="preview-edit">
+            <Ionicons name={'create-outline' as IoniconsName} size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+          <TouchableOpacity style={s.actionBtn} onPress={handleDeletePress} testID="preview-delete">
+            <Ionicons name={'trash-outline' as IoniconsName} size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+          <TouchableOpacity style={s.actionBtn} onPress={onClose} testID="close-preview">
+            <Ionicons name={'close' as IoniconsName} size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
     </Modal>
   );
@@ -150,9 +169,12 @@ const s = StyleSheet.create({
     paddingVertical: 20,
   },
 
-  // 關閉按鈕（右上角）
-  closeBtn: {
+  // 右上角動作列（編輯／刪除／關閉）
+  actionRow: {
     position: 'absolute', top: 52, right: 16,
+    flexDirection: 'row', gap: 10,
+  },
+  actionBtn: {
     width: 36, height: 36, borderRadius: 18,
     backgroundColor: 'rgba(0,0,0,0.45)',
     alignItems: 'center', justifyContent: 'center',

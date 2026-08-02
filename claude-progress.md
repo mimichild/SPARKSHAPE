@@ -8,13 +8,33 @@
 
 - 儲存庫根目錄：/Users/mimi/Documents/SPARKSHAPE
 - 標準啟動路徑：`RUN_START_COMMAND=1 ./init.sh`（實際指令見 init.sh 的 START_CMD）
-- 標準驗證路徑：./init.sh（pnpm install + pnpm test；2026-07-23 為 34 tests passed）
-- monetization-001：passing；AdMob／RevenueCat 已設定並**已實機驗證購買成功**（RevenueCat 官方事故已於 7/31 解決）；順帶修好 `useProGate.ts` 一個真實 bug（見最新工作階段）；5 個 SPARK App 監利化功能全部完成
+- 標準驗證路徑：./init.sh（pnpm install + pnpm test；2026-08-02 為 38 tests passed）
+- monetization-001：passing；AdMob／RevenueCat 已設定並**已實機驗證購買成功**（RevenueCat 官方事故已於 7/31 解決）；順帶修好 `useProGate.ts` 一個真實 bug；5 個 SPARK App 監利化功能全部完成
+- photowall-001：passing；照片牆全螢幕預覽（PhotoPreviewModal）新增編輯（開既有 ReviewScreen 改日期/數據）與刪除按鈕，重用既有 updatePhotoMeta/removePhoto，使用者實機確認沒問題（見最新工作階段）
 - 目前最高優先級未完成功能：無（feature_list.json 內下一個 not_started 功能待下輪選取）
 - 目前 blocker：無
 - 背景：Apple Developer Program 已生效（2026-07-20）；ios-001～ios-006、native-001 皆已 passing（含 TestFlight 實機驗證），EAS 雲端建置成功產出 .ipa，也驗證了兩個 config plugin（fmt/RCTBridge）在雲端環境確實有效；實機測試核心流程（相機拍照/相簿選圖/資料持久化）皆無問題；App icon 圓形外菱格紋殘留問題已修好並實機確認（同時解決 iOS 與 Android，因為兩邊共用同一張來源圖）；已設定 EAS Update（OTA）支援與 eas.json ascAppId（submit 可完全非互動執行）
 
 ## 工作階段日誌
+
+### 工作階段 018
+
+- 日期：2026-08-02
+- 本輪目標：使用者反映照片牆的全螢幕預覽視窗不能改拍攝日期、不能刪除照片，要求補上
+- 已完成：
+  - 研究先釐清範圍：新增/編輯照片的主流程（`current.tsx` → `ReviewScreen`）其實早就有日期選擇器（MiniCalendar）跟刪除功能，缺口只在「照片牆」分頁點開的全螢幕預覽 `PhotoPreviewModal.tsx`（只有關閉按鈕）
+  - TDD：先寫 `src/__tests__/components/PhotoPreviewModal.test.tsx`（confirm 紅燈），再實作
+  - `PhotoPreviewModal.tsx` 新增必要 props `onEdit`/`onDelete`＋右上角編輯（開既有 ReviewScreen）/刪除（跳 Alert 確認）按鈕
+  - `wall.tsx` 新增 `editTarget` 狀態，完全重用 `current.tsx` 同一套「`ReviewScreen` 包在 `<Modal><GestureHandlerRootView>` 內、`mode='edit'`」模式，確認後呼叫既有的 `updatePhotoMeta`；刪除呼叫既有的 `removePhoto`＋`deleteBodyPhotoFiles`
+  - 過程中一度嘗試開第二個模擬器（跟使用者正在用來截 SHAPE 截圖的那台分開）用 AppleScript/cliclick 模擬點擊做端對端驗證，過程中發現這類全域滑鼠自動化會誤觸使用者當下真的在用的其他視窗（PhotoScape X），經使用者確認畫面沒事後立刻中止，改請使用者本人在自己的模擬器上實際點一次編輯/刪除
+  - 使用者確認「SHAPE 的新功能我確定沒問題」
+  - 順帶：檢視使用者提供的 SPARKWEAR/SPARKPLATE/SPARKFIT/SPARKLOG 四個 App 的 App Store 截圖，發現 WEAR／LOG 的截圖底部露出 AdMob「Test mode」測試廣告（PLATE／FIT 之前已處理過同樣問題），用量測像素邊界的方式精確裁掉廣告區塊、補回原始 1206×2622 尺寸，存進各自的 `final` 資料夾（此為圖片後製，不在本專案 git 範圍內，檔案在 `~/Desktop/SPARKWEAR-screenshots/`）
+- 執行過的驗證：`pnpm test`（8 suites、38 tests 全過，含新增的 3 項 PhotoPreviewModal 測試）；`npx tsc --noEmit -p .`（無錯誤）；使用者本人於模擬器實際操作編輯日期與刪除照片
+- 已擷取證據：見 feature_list.json photowall-001 evidence
+- 提交記錄：（本輪 commit）
+- 已知風險或未解決問題：無
+- 教訓記錄：驗證模擬器 UI 互動時，不要用滑鼠座標自動化（AppleScript/cliclick）去點模擬器——這類操作是全域滑鼠事件，會誤觸使用者當下正在用的其他視窗；之後一律優先請使用者本人操作驗證，或改用不需要滑鼠的程式碼層驗證（deep link + sqlite seed 只適合到「畫面正確顯示」為止，實際點擊互動交給使用者）
+- 下一步最佳動作：feature_list.json 全部 passing，無待辦項目；有新需求再開新 feature
 
 ### 工作階段 017
 
