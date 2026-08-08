@@ -17,7 +17,7 @@ import { useSettingsStore } from '@/stores/settingsStore';
 export default function WelcomeScreen() {
   const [settingsVisible, setSettingsVisible] = useState(false);
   const {
-    themeColor, openCameraOnLaunch, triggerCameraOpen,
+    openCameraOnLaunch, triggerCameraOpen,
     loaded, hasAutoLaunched, markAutoLaunched,
   } = useSettingsStore();
 
@@ -54,7 +54,7 @@ export default function WelcomeScreen() {
 
       {/* 主視覺標題區 */}
       <Animated.View style={[s.hero, { opacity: heroFade, transform: [{ translateY: heroSlide }] }]}>
-        <Text style={[s.title, { color: themeColor }]}>SPARK SHAPE</Text>
+        <Text style={s.title}>SPARK SHAPE</Text>
         <Text style={s.subtitle}>拍下每一刻的自己，我要見證我的蛻變</Text>
       </Animated.View>
 
@@ -65,17 +65,16 @@ export default function WelcomeScreen() {
       <Animated.View style={[s.footer, { opacity: footFade }]}>
         {/* 設定 */}
         <TouchableOpacity
-          style={s.settingsRow}
+          style={s.settingsBtn}
           onPress={() => setSettingsVisible(true)}
           activeOpacity={0.6}
         >
-          <Text style={s.snowIcon}>✳</Text>
-          <Text style={s.settingsLabel}> 設定</Text>
+          <Text style={s.settingsLabel}>設定</Text>
         </TouchableOpacity>
 
         {/* 開始使用 */}
         <TouchableOpacity
-          style={[s.ctaBtn, { backgroundColor: themeColor }]}
+          style={s.ctaBtn}
           onPress={() => router.replace('/(tabs)/current')}
           activeOpacity={0.82}
         >
@@ -95,7 +94,7 @@ export default function WelcomeScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#FFFFFF' },
+  root: { flex: 1, backgroundColor: '#EAAFB3' },
   topSpace: { flex: 0.5 },
   midSpace:  { flex: 0.5 },
 
@@ -106,10 +105,11 @@ const s = StyleSheet.create({
     letterSpacing: 8,
     textAlign: 'center',
     marginBottom: 32,
+    color: '#FFFFFF',
   },
   subtitle: {
     fontSize: 14,             // 稍大
-    color: '#BBBBBB',
+    color: 'rgba(255,255,255,0.8)',
     textAlign: 'center',
     letterSpacing: 0.5,
     lineHeight: 22,
@@ -120,24 +120,30 @@ const s = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 20,
     alignItems: 'center',
-    gap: 22,
+    gap: 14,
   },
-  settingsRow: { flexDirection: 'row', alignItems: 'center' },
-  snowIcon: { fontSize: 22, color: '#9DC0D0', lineHeight: 30 },  // 1.5x
+  settingsBtn: {
+    height: 40,
+    paddingHorizontal: 28,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.22)',
+  },
   settingsLabel: {
-    fontSize: 20,             // 13 × 1.5 = 19.5 → 20
-    color: '#AAAAAA',
+    fontSize: 15,
+    color: '#FFFFFF',
     letterSpacing: 1.5,
-    fontWeight: '300',
+    fontWeight: '500',
   },
-
 
   ctaBtn: {
     width: '100%',
     height: 54,
-    borderRadius: 14,
+    borderRadius: 27,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#FDF2F0',
     shadowColor: '#D09089',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.25,
@@ -145,9 +151,9 @@ const s = StyleSheet.create({
     elevation: 5,
   },
   ctaText: {
-    color: '#FFFFFF',
+    color: '#EAAFB3',
     fontSize: 17,
-    fontWeight: '400',
+    fontWeight: '500',
     letterSpacing: 2,
   },
 });
