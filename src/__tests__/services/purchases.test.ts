@@ -85,6 +85,64 @@ describe('purchases service', () => {
     });
   });
 
+  describe('fetchPackages', () => {
+    it('returns an empty array without calling RevenueCat when no API key is configured', async () => {
+      const { fetchPackages, mockPurchases } = loadPurchasesWith('');
+
+      const got = await fetchPackages();
+
+      expect(got).toEqual([]);
+      expect(mockPurchases.getOfferings).not.toHaveBeenCalled();
+    });
+
+    it('returns the current offering’s available packages', async () => {
+      const { fetchPackages, mockPurchases } = loadPurchasesWith('test-key');
+      const pkgs = [{ identifier: 'pro_monthly' }, { identifier: 'pro_yearly' }];
+      mockPurchases.getOfferings.mockResolvedValue({ current: { availablePackages: pkgs } });
+
+      const got = await fetchPackages();
+
+      expect(got).toEqual(pkgs);
+    });
+
+    it('returns an empty array when there is no current offering', async () => {
+      const { fetchPackages, mockPurchases } = loadPurchasesWith('test-key');
+      mockPurchases.getOfferings.mockResolvedValue({ current: null });
+
+      const got = await fetchPackages();
+
+      expect(got).toEqual([]);
+    });
+
+    it('returns an empty array if the RevenueCat call throws', async () => {
+      const { fetchPackages, mockPurchases } = loadPurchasesWith('test-key');
+      mockPurchases.getOfferings.mockRejectedValue(new Error('network error'));
+
+      const got = await fetchPackages();
+
+      expect(got).toEqual([]);
+    });
+  });
+
+  describe('purchasePackage', () => {
+    it('throws when no API key is configured', async () => {
+      const { purchasePackage } = loadPurchasesWith('');
+      await expect(purchasePackage({ identifier: 'pro_yearly' } as never)).rejects.toThrow('RevenueCat 尚未設定');
+    });
+
+    it('purchases the given package and returns the resulting entitlement', async () => {
+      const { purchasePackage, mockPurchases } = loadPurchasesWith('test-key');
+      mockPurchases.purchasePackage.mockResolvedValue({
+        customerInfo: { entitlements: { active: { pro: {} } } },
+      });
+
+      const got = await purchasePackage({ identifier: 'pro_yearly' } as never);
+
+      expect(got).toBe(true);
+      expect(mockPurchases.purchasePackage).toHaveBeenCalledWith({ identifier: 'pro_yearly' });
+    });
+  });
+
   describe('purchasePro', () => {
     it('throws when no API key is configured', async () => {
       const { purchasePro } = loadPurchasesWith('');
