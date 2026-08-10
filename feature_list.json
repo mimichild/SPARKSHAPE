@@ -201,6 +201,34 @@
         "2026-08-02 | 使用者本人在自己正在用的模擬器（iPhone 17 Pro）實際操作：照片牆點開照片預覽 → 按編輯改日期 → 按刪除 | 使用者確認「SHAPE 的新功能我確定沒問題」"
       ],
       "notes": "研究發現：新增/編輯照片這條主流程（app/(tabs)/current.tsx → ReviewScreen）早就有日期選擇器（MiniCalendar）跟刪除功能，不是完全沒有；缺口只在「照片牆」分頁點開的全螢幕預覽（PhotoPreviewModal.tsx）——這裡目前只有關閉按鈕，沒有編輯/刪除入口。使用者要的其實是把這個既有能力也接到這個預覽視窗，不是從零建立日期選擇/刪除邏輯。實作完全重用既有、已上線驗證過的邏輯：PhotoPreviewModal 新增的編輯按鈕開的就是 current.tsx 早就在用的同一顆 ReviewScreen（mode='edit'），確認後呼叫的是既有、已有單元測試涵蓋的 updatePhotoMeta；刪除按鈕呼叫的是既有、已有單元測試涵蓋的 removePhoto + deleteBodyPhotoFiles，跟 current.tsx／wall.tsx 長按多選刪除是同一套函式。過程中一度嘗試用第二個模擬器＋滑鼠自動化（AppleScript/cliclick）驗證，發現這類全域滑鼠自動化有誤觸使用者其他視窗（PhotoScape X）的風險，已中止並經使用者確認畫面沒事；最終驗證改由使用者本人在自己的模擬器上實際操作編輯/刪除後確認沒問題。教訓：之後若要驗證模擬器 UI 互動，優先請使用者本人操作，不要用滑鼠座標自動化去點模擬器（風險是點到使用者當下真的在用的其他視窗）。"
+    },
+    {
+      "id": "appstore-001",
+      "priority": 10,
+      "area": "ios",
+      "title": "修復 App Store 審查拒絕問題（2.2 Beta Testing + 3.1.2(c) 訂閱資訊）並重新送審",
+      "user_visible_behavior": "App Store Connect 上的 iOS App 1.0 提交項目原本因 Guideline 2.2（Beta Testing）與 3.1.2(c)（訂閱缺必要資訊）遭拒；使用者在「設定」的 PRO 解鎖卡片能看到真實方案（月費/年費）的標題、期間、價格，以及可點擊的隱私權政策/服務條款連結，並重新提交至 App 審查。",
+      "status": "passing",
+      "verification": [
+        "pnpm test 全部通過。",
+        "npx tsc --noEmit -p . 無錯誤。",
+        "模擬器：開啟設定面板，PRO 解鎖卡片逐一列出 RevenueCat 真實方案（標題/期間/價格），並有可點擊的隱私權政策/服務條款連結。",
+        "curl 驗證隱私權政策與服務條款（Apple 標準 EULA）連結皆回應 200。",
+        "eas build --platform ios --profile production 成功。",
+        "eas submit --platform ios --profile production --latest 成功，且已在 App Store Connect 重新提交至 App 審查。"
+      ],
+      "evidence": [
+        "2026-08-10 | 讀取 App Store Connect 拒絕訊息（Submission ID 3dd47e6a-3385-44d5-a639-2c92a0195f02） | 2.2.0 Performance: Beta Testing；3.1.2 Business: Payments - Subscriptions（App 內購買畫面缺訂閱標題/期間/價格與服務條款/隱私權政策連結，Apple 附的 Screenshot-0809-120741.png 正是 SettingsSheet 只有一顆泛用『升級 Pro』按鈕）",
+        "2026-08-10 | 檢查 App 資訊 → App 隱私權：隱私權政策 URL 已設定 https://kyomistudio.github.io/privacy.html；App 版本描述欄位已含 Apple 標準 EULA 連結 https://www.apple.com/legal/internet-services/itunes/dev/stdeula/ | 兩者皆為 App Store Connect 端已具備的 metadata 要求；curl 兩個 URL 皆回應 200",
+        "2026-08-10 | 發現 SPARKWEAR 已在 2026-08-07（commit d3d8641）修過同一組拒絕原因，套用同樣的修法：src/constants/monetization.ts 新增 PRIVACY_POLICY_URL/TERMS_OF_USE_URL；src/services/purchases.ts 新增 fetchPackages/purchasePackage；SettingsSheet.tsx 的 PRO 解鎖卡片改成逐一渲染 RevenueCat 真實方案並加上隱私權政策/服務條款連結 | pnpm test：8 suites、44 tests 全過（新增 6 項 purchases 測試）；npx tsc --noEmit -p . 無錯誤",
+        "2026-08-10 | 模擬器（iPhone 17 Pro）實機互動：npx expo start --dev-client --clear 起 Metro，開啟已裝好的 dev-client，點『設定』| 畫面正確顯示『SPARK SHAPE Pro 月費方案／訂閱期間：每月自動續訂／價格：$0.99』與『SPARK SHAPE Pro 年費方案／訂閱期間：每年自動續訂／價格：$7.99』兩個方案卡片，下方有可點擊的『隱私權政策 · 服務條款』連結",
+        "2026-08-10 | git commit b6ea305（訂閱付費畫面修復）；npx eas build --platform ios --profile production --non-interactive | Build 成功，buildNumber 自動從 3 遞增為 4，產出 .ipa（https://expo.dev/artifacts/eas/DgA0po2g4X3XtMq9Dd40nnJh0fM38HaUuWJmjqopNIQ.ipa）",
+        "2026-08-10 | npx eas submit --platform ios --profile production --latest --non-interactive | 『Submitted your app to Apple App Store Connect!』，Build 4 成功上傳",
+        "2026-08-10 | App Store Connect：等 Apple 處理完 Build 4（TestFlight 建置版本列表出現『4 準備提交』）後，移除版本 1.0 原本接的 Build 3、改接 Build 4、儲存 | 版本狀態從『已拒絕』變成『準備提交』",
+        "2026-08-10 | App Store Connect → App 資訊 → 受監管醫療器材聲明：勾選『否』（SPARKSHAPE 只是身形照片/量測記錄工具，不做疾病診斷、預防、監控或治療，非受監管醫療器材）並儲存 | 版本頁原本的『進行受監管醫療器材聲明』提示消失",
+        "2026-08-10 | App Store Connect → iOS 提交項目 → 點『重新提交至 App 審查』| 4 個提交項目（Pro 年費／iOS App 1.0 (Build 4)／SPARK SHAPE Pro／Pro 月費）狀態全部變成『等待審查』，成功重新送審"
+      ],
+      "notes": "2.2 Beta Testing 與 3.1.2(c) 常一起出現：付費畫面缺法規必要資訊會讓審查員覺得付費流程不完整／像 demo。SPARKWEAR 已驗證過同一套修法能讓付費畫面符合 Apple 要求，但兩個 App 各自的實際審查結果需等 Apple 重新審查才能確認，本項驗證範圍僅涵蓋『我方已補齊 Apple 明確要求的資訊並重新送審』，不涵蓋 Apple 最終核准與否（不在我方控制範圍內）。"
     }
   ]
 }

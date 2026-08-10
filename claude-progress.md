@@ -8,14 +8,34 @@
 
 - 儲存庫根目錄：/Users/mimi/Documents/SPARKSHAPE
 - 標準啟動路徑：`RUN_START_COMMAND=1 ./init.sh`（實際指令見 init.sh 的 START_CMD）
-- 標準驗證路徑：./init.sh（pnpm install + pnpm test；2026-08-02 為 38 tests passed）
+- 標準驗證路徑：./init.sh（pnpm install + pnpm test；2026-08-10 為 44 tests passed）
+- appstore-001：passing；App Store 審查第一次送審被拒（Guideline 2.2 Beta Testing + 3.1.2(c) 訂閱缺必要資訊），已修復設定頁 PRO 解鎖卡片（列出真實方案標題/期間/價格＋隱私權政策/服務條款連結）、補上受監管醫療器材聲明（否），Build 4 已上傳並重新提交至 App 審查（4 個項目皆為「等待審查」），**等待 Apple 這輪審查結果**
 - monetization-001：passing；AdMob／RevenueCat 已設定並**已實機驗證購買成功**（RevenueCat 官方事故已於 7/31 解決）；順帶修好 `useProGate.ts` 一個真實 bug；5 個 SPARK App 監利化功能全部完成
-- photowall-001：passing；照片牆全螢幕預覽（PhotoPreviewModal）新增編輯（開既有 ReviewScreen 改日期/數據）與刪除按鈕，重用既有 updatePhotoMeta/removePhoto，使用者實機確認沒問題（見最新工作階段）
-- 目前最高優先級未完成功能：無（feature_list.json 內下一個 not_started 功能待下輪選取）
-- 目前 blocker：無
-- 背景：Apple Developer Program 已生效（2026-07-20）；ios-001～ios-006、native-001 皆已 passing（含 TestFlight 實機驗證），EAS 雲端建置成功產出 .ipa，也驗證了兩個 config plugin（fmt/RCTBridge）在雲端環境確實有效；實機測試核心流程（相機拍照/相簿選圖/資料持久化）皆無問題；App icon 圓形外菱格紋殘留問題已修好並實機確認（同時解決 iOS 與 Android，因為兩邊共用同一張來源圖）；已設定 EAS Update（OTA）支援與 eas.json ascAppId（submit 可完全非互動執行）
+- photowall-001：passing；照片牆全螢幕預覽（PhotoPreviewModal）新增編輯（開既有 ReviewScreen 改日期/數據）與刪除按鈕，重用既有 updatePhotoMeta/removePhoto，使用者實機確認沒問題
+- 目前最高優先級未完成功能：無（feature_list.json 全部 passing；等 Apple 審查結果，若再被拒則依拒絕原因開新 feature）
+- 目前 blocker：無（等待 Apple 審查中，非我方可控）
+- 背景：Apple Developer Program 已生效（2026-07-20）；ios-001～ios-006、native-001 皆已 passing（含 TestFlight 實機驗證），EAS 雲端建置成功產出 .ipa，也驗證了兩個 config plugin（fmt/RCTBridge）在雲端環境確實有效；實機測試核心流程（相機拍照/相簿選圖/資料持久化）皆無問題；App icon 圓形外菱格紋殘留問題已修好並實機確認（同時解決 iOS 與 Android，因為兩邊共用同一張來源圖）；已設定 EAS Update（OTA）支援與 eas.json ascAppId（submit 可完全非互動執行）；第一次 App Store 提交（Build 3）於 2026-08-07 遭拒，2026-08-10 修復並以 Build 4 重新送審
 
 ## 工作階段日誌
+
+### 工作階段 019
+
+- 日期：2026-08-10
+- 本輪目標：使用者請求檢查 App Store Connect 上 SPARKSHAPE 的 in-flight 審查狀態，補齊缺漏並重新送審
+- 已完成：
+  - App Store Connect 檢視：iOS App 1.0（Build 3）已被拒絕，兩個原因——Guideline 2.2.0 Performance: Beta Testing、Guideline 3.1.2 Business: Payments - Subscriptions；下載 Apple 附的審查截圖（Screenshot-0809-120741.png）確認就是設定頁「PRO 解鎖」卡片，只有一顆泛用「升級 Pro」按鈕，沒有訂閱標題/期間/價格/服務條款/隱私權政策連結
+  - 確認 App Store Connect 端的 metadata 需求已具備：App 描述含 Apple 標準 EULA 連結、App 隱私權頁面已設定隱私權政策 URL，兩個連結 curl 皆回應 200
+  - 發現姊妹 App SPARKWEAR 已於 2026-08-07（commit d3d8641）修過同一組拒絕原因，套用同樣修法到 SPARKSHAPE：`src/constants/monetization.ts` 新增 `PRIVACY_POLICY_URL`/`TERMS_OF_USE_URL`；`src/services/purchases.ts` 新增 `fetchPackages`/`purchasePackage`；`SettingsSheet.tsx` 的 PRO 解鎖卡片改成逐一渲染 RevenueCat 真實方案（標題/期間/價格）＋可點擊的隱私權政策/服務條款連結
+  - 模擬器（iPhone 17 Pro）啟動 Metro＋dev-client 實際打開設定面板確認：正確顯示「SPARK SHAPE Pro 月費方案 $0.99」「SPARK SHAPE Pro 年費方案 $7.99」兩個方案卡片與可點擊法規連結
+  - `git commit b6ea305` → `eas build --platform ios --profile production`（Build 4，非互動）成功 → `eas submit --platform ios --profile production --latest`（非互動）成功上傳
+  - 等 Apple 處理完 Build 4 後，在 App Store Connect 把版本 1.0 原本接的 Build 3 換成 Build 4 並儲存
+  - 順帶處理版本頁新出現的藍色提示「進行受監管醫療器材聲明」：App 資訊頁勾選「否」（SPARKSHAPE 只是身形照片/量測記錄工具，不做疾病診斷/預防/監控/治療，非受監管醫療器材）
+  - 點「重新提交至 App 審查」，4 個提交項目（Pro 年費／iOS App 1.0 Build 4／SPARK SHAPE Pro／Pro 月費）狀態全部變成「等待審查」，成功重新送審
+- 執行過的驗證：`pnpm test`（8 suites、44 tests 全過，含新增 6 項 purchases 服務測試）；`npx tsc --noEmit -p .`（無錯誤）；模擬器實際點開設定面板確認畫面；`curl` 驗證隱私權政策/EULA 連結皆 200；`eas build`／`eas submit` 皆實際執行且成功；App Store Connect 頁面確認重新送審後狀態為「等待審查」
+- 已擷取證據：見 feature_list.json appstore-001 evidence
+- 提交記錄：b6ea305（訂閱付費畫面修復）
+- 已知風險或未解決問題：Apple 這輪審查結果尚未知（審查通常需要數小時到數天），2.2 Beta Testing 這個原因較主觀，修復依據是「Apple 常把 2.2 與 3.1.2(c) 一起判定，補齊訂閱法規資訊後通常一併解決」的合理推論與 SPARKWEAR 同款修法，但最終是否通過需等 Apple 實際審查結果；若這輪仍被拒，要看新的拒絕理由再判斷
+- 下一步最佳動作：等 Apple 審查結果（通常會寄信到 kyoangel.tw@gmail.com 或在 App Store Connect 通知）；若通過就可以發佈；若再被拒，讀新的拒絕訊息內容，視情況開新 feature 處理
 
 ### 工作階段 018
 
