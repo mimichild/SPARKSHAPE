@@ -14,9 +14,25 @@
 - photowall-001：passing；照片牆全螢幕預覽（PhotoPreviewModal）新增編輯（開既有 ReviewScreen 改日期/數據）與刪除按鈕，重用既有 updatePhotoMeta/removePhoto，使用者實機確認沒問題
 - 目前最高優先級未完成功能：無（feature_list.json 全部 passing；等 Apple 審查結果，若再被拒則依拒絕原因開新 feature）
 - 目前 blocker：無（等待 Apple 審查中，非我方可控）
+- branding-001：passing；桌面圖示下方 App 名稱由「SPARKSHAPE」改為「SPARK SHAPE」（app.json expo.name，同步 iOS Info.plist／Android strings.xml），已跟使用者討論過長名稱在部分裝置單行顯示會被截斷（如「SPARK SH...」），使用者暫時決定維持現狀，未來若要改用中文名稱依系統語言切換可再開新項目
 - 背景：Apple Developer Program 已生效（2026-07-20）；ios-001～ios-006、native-001 皆已 passing（含 TestFlight 實機驗證），EAS 雲端建置成功產出 .ipa，也驗證了兩個 config plugin（fmt/RCTBridge）在雲端環境確實有效；實機測試核心流程（相機拍照/相簿選圖/資料持久化）皆無問題；App icon 圓形外菱格紋殘留問題已修好並實機確認（同時解決 iOS 與 Android，因為兩邊共用同一張來源圖）；已設定 EAS Update（OTA）支援與 eas.json ascAppId（submit 可完全非互動執行）；第一次 App Store 提交（Build 3）於 2026-08-07 遭拒，2026-08-10 修復並以 Build 4 重新送審
 
 ## 工作階段日誌
+
+### 工作階段 020
+
+- 日期：2026-08-12
+- 本輪目標：使用者要求把桌面圖示下方的 App 名稱改為「SPARK SHAPE」
+- 已完成：
+  - app.json expo.name 改為「SPARK SHAPE」；同步 ios/SPARKSHAPE/Info.plist CFBundleDisplayName；app.json 變更後刪除本機 android/ 目錄，讓 build-apk 腳本的 expo prebuild 重新產生 android/app/src/main/res/values/strings.xml app_name
+  - 依專案記憶（每次修改後自動建置 APK 並回報），跑 build-apk 腳本，建置成功並複製到 Google Drive
+  - 與使用者討論「SPARK SHAPE」帶空格在圖示下方單行顯示可能被截斷（例如變成「SPARK SH...」）的疑慮：說明桌面圖示名稱（CFBundleDisplayName／Android app_name，單行約 10–11 字元）與 App Store 上架產品名稱（App Store Connect 後台欄位，上限 30 字元）是兩個獨立欄位，不必二選一；也說明可用 iOS app.json 的 locales 欄位＋Android 自訂 config plugin（仿照專案既有的 withFmtConstevalFix.js 模式）做到「依系統語言顯示不同名稱」（例如中文系統顯示「心動曲線」、英文系統顯示「SPARK SHAPE」）——使用者最終決定暫時不做，維持「SPARK SHAPE」現狀
+  - 補記 feature_list.json 新增 branding-001（priority 11）並標為 passing；更新「目前已驗證狀態」
+- 執行過的驗證：`./init.sh`（8 suites、44 tests 全過）；`bash build-apk.sh`（BUILD SUCCESSFUL，APK 產出並複製到 Google Drive）
+- 已擷取證據：見 feature_list.json branding-001 evidence
+- 提交記錄：（本輪 commit）
+- 已知風險或未解決問題：無（多語系顯示名稱是使用者主動延後的待辦，不是問題，未來要做可參考本筆記錄的技術方案）
+- 下一步最佳動作：feature_list.json 全部 passing，無待辦項目；等 Apple 審查結果或有新需求再開新 feature
 
 ### 工作階段 019
 

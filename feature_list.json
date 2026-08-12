@@ -229,6 +229,26 @@
         "2026-08-10 | App Store Connect → iOS 提交項目 → 點『重新提交至 App 審查』| 4 個提交項目（Pro 年費／iOS App 1.0 (Build 4)／SPARK SHAPE Pro／Pro 月費）狀態全部變成『等待審查』，成功重新送審"
       ],
       "notes": "2.2 Beta Testing 與 3.1.2(c) 常一起出現：付費畫面缺法規必要資訊會讓審查員覺得付費流程不完整／像 demo。SPARKWEAR 已驗證過同一套修法能讓付費畫面符合 Apple 要求，但兩個 App 各自的實際審查結果需等 Apple 重新審查才能確認，本項驗證範圍僅涵蓋『我方已補齊 Apple 明確要求的資訊並重新送審』，不涵蓋 Apple 最終核准與否（不在我方控制範圍內）。"
+    },
+    {
+      "id": "branding-001",
+      "priority": 11,
+      "area": "branding",
+      "title": "桌面圖示下方 App 名稱改為「SPARK SHAPE」",
+      "user_visible_behavior": "使用者在手機桌面看到 SPARKSHAPE 圖示下方的名稱顯示為「SPARK SHAPE」（原本是「SPARKSHAPE」）。",
+      "status": "passing",
+      "verification": [
+        "app.json 的 expo.name 改為 SPARK SHAPE。",
+        "同步更新 ios/Info.plist 的 CFBundleDisplayName 與 android/strings.xml 的 app_name（app.json 變更後刪除 android/ 由 expo prebuild 重新產生）。",
+        "pnpm test 全部通過。",
+        "./gradlew assembleRelease 成功產出可安裝 APK。"
+      ],
+      "evidence": [
+        "2026-08-12 | 修改 app.json expo.name 為 SPARK SHAPE；ios/SPARKSHAPE/Info.plist CFBundleDisplayName 同步改為 SPARK SHAPE；rm -rf android/ 後透過 build-apk 腳本的 expo prebuild 重新產生，android/app/src/main/res/values/strings.xml app_name 確認為 SPARK SHAPE | 三處名稱皆一致",
+        "2026-08-12 | ./init.sh | 8 suites、44 tests 全過",
+        "2026-08-12 | bash /Users/mimi/.claude/skills/build-apk/scripts/build-apk.sh | BUILD SUCCESSFUL in 2m 16s，APK 已複製到 Google Drive：/SPARK-Builds/SPARKSHAPE/sparkshape-v1.0.0-20260812-1029.apk"
+      ],
+      "notes": "使用者提出疑慮：帶空格的「SPARK SHAPE」在圖示下方單行顯示可能被截斷成「SPARK SH...」，討論後使用者暫時決定維持現狀不做多語系名稱（中文『心動曲線』依系統語言切換的方案），之後若要改回單字或做 iOS locales + Android config plugin 的多語系顯示名稱，可再開新項目處理。ios/、android/ 皆為 .gitignore 排除的本機產生目錄，git 只追蹤 app.json 的變更；ios/Info.plist、android/strings.xml 的修改僅影響本機建置產物，日後跑 expo prebuild --clean 會依 app.json 重新產生。"
     }
   ]
 }
